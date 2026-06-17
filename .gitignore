@@ -1,0 +1,19 @@
+# Backend (Laravel)
+/backend/vendor
+/backend/node_modules
+/backend/.env
+/backend/storage/*.key
+/backend/public/hot
+/backend/storage/framework/cache/*
+/backend/storage/framework/sessions/*
+/backend/storage/framework/views/*
+/backend/storage/logs/*
+
+# Frontend (React)
+/frontend/node_modules
+/frontend/dist
+/frontend/.env
+
+# General
+.DS_Store
+Thumbs.db
