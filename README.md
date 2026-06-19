@@ -169,18 +169,19 @@ Dokumentasi lengkap (SRS) tersedia di [`docs/SRS_FIS_Facarbon.docx`](docs/SRS_FI
 
 - [x] Penyusunan SRS
 - [x] Backend API (Laravel + Sanctum)
-- [ ] Frontend (React + Tailwind)
-- [ ] Fitur import Excel
-- [ ] Cetak faktur ke PDF
+- [x] Frontend (React + Tailwind)
+- [x] Fitur import Excel
+- [x] Cetak faktur ke PDF
 - [ ] Deployment online
 
 ---
 
-## 👤 Kontak
+## 👥 Tim Pengembang
 
-**[Mohammad Panji Satrio]**
-📧 pandjisatrio49@gmail.com
-🔗 [GitHub](https://github.com/pandjjiSTR)
+| Nama | NIM | GitHub |
+|---|---|---|
+| Mohammad Panji Satrio | 13240019 | [@pandjiSTR](https://github.com/pandjiSTR) |
+| Anaya Bintang Prawidya | 13240011 | [@fleurdes0ir](https://github.com/fleurdes0ir) |
 
 ---
 
