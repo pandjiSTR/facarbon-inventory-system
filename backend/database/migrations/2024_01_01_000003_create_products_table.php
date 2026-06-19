@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -13,7 +14,16 @@ return new class extends Migration
             $table->string('sku', 20)->unique()->comment('Kode produk, contoh: FAC-001');
             $table->string('name');
             $table->enum('carbon_type', ['forged', 'twill'])->comment('Jenis carbon');
-            $table->string('vespa_compatibility')->comment('Kompatibilitas tipe Vespa, contoh: Sprint S, Universal');
+            
+            // 💡 TRIK KHUSUS: Deteksi jenis database pas pembuatan tabel awal
+            if (Schema::getConnection()->getDriverName() === 'pgsql') {
+                // Jika di Render (PostgreSQL), buat kolomnya langsung dengan tipe jsonb biar ga error di kemudian hari
+                $table->jsonb('vespa_compatibility')->comment('Kompatibilitas tipe Vespa, contoh: Sprint S, Universal');
+            } else {
+                // Jika di lokal laptop lu (MySQL), tetap berjalan sebagai string biasa bawaan project lama lu
+                $table->string('vespa_compatibility')->comment('Kompatibilitas tipe Vespa, contoh: Sprint S, Universal');
+            }
+
             $table->unsignedBigInteger('modal_price')->comment('Harga modal/produksi (Rp)');
             $table->unsignedBigInteger('reseller_price')->comment('Harga jual reseller (Rp)');
             $table->unsignedBigInteger('online_price')->nullable()->comment('Harga jual online/marketplace (Rp), nullable jika belum ada');
@@ -25,9 +35,13 @@ return new class extends Migration
 
             // Index untuk query yang sering dipakai
             $table->index('carbon_type');
-            $table->index('vespa_compatibility');
             $table->index('is_active');
             $table->index('current_stock');
+            
+            // Index khusus untuk PostgreSQL jika kolomnya berupa JSON
+            if (Schema::getConnection()->getDriverName() !== 'pgsql') {
+                $table->index('vespa_compatibility');
+            }
         });
     }
 
