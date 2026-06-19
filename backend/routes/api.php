@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\StockOutController;
 use App\Http\Controllers\Api\FinanceController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\ImportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,5 +56,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Invoices
     Route::apiResource('invoices', InvoiceController::class)->except(['update']);
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf']);
+
+    // Import Produk dari Excel
+    Route::prefix('import')->group(function () {
+        Route::post('/preview', [ImportController::class, 'preview']);
+        Route::post('/confirm', [ImportController::class, 'confirm']);
+    });
 
 });

@@ -13,6 +13,7 @@ import Finances from './pages/Finances'
 import Invoices from './pages/Invoices'
 import Transactions from './pages/Transactions'
 import Reports from './pages/Reports'
+import Import from './pages/Import'
 import Placeholder from './pages/Placeholder'
 
 function App() {
@@ -34,7 +35,7 @@ function App() {
               <Route path="invoices"          element={<Invoices />} />
               <Route path="transactions"      element={<Transactions />} />
               <Route path="reports"           element={<Reports />} />
-              <Route path="import"            element={<Placeholder title="Import Data" />} />
+              <Route path="import"            element={<Import />} />
             </Route>
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
