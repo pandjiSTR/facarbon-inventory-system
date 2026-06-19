@@ -38,10 +38,9 @@ return new class extends Migration
             $table->index('is_active');
             $table->index('current_stock');
             
-            // Index khusus untuk PostgreSQL jika kolomnya berupa JSON
-            if (Schema::getConnection()->getDriverName() !== 'pgsql') {
-                $table->index('vespa_compatibility');
-            }
+            // 💡 FIX: Daftarkan index di semua jenis database (MySQL & PostgreSQL)
+            // Biar kalau ada migration alter lain yang mau nge-drop index ini, PostgreSQL di Render ga ngamuk lagi.
+            $table->index('vespa_compatibility');
         });
     }
 
