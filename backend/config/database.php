@@ -4,10 +4,21 @@ use Illuminate\Support\Str;
 
 return [
 
+    /*
+    |--------------------------------------------------------------------------
+    | Default Database Connection Name
+    |--------------------------------------------------------------------------
+    */
     'default' => env('DB_CONNECTION', 'mysql'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Database Connections
+    |--------------------------------------------------------------------------
+    */
     'connections' => [
 
+        // Koneksi MySQL (Tetap aman dipakai buat ngoding di lokal laptop lu)
         'mysql' => [
             'driver'         => 'mysql',
             'url'            => env('DB_URL'),
@@ -28,13 +39,39 @@ return [
             ]) : [],
         ],
 
+        // 💡 KONEKSI POSTGRESQL (Wajib ada biar nembak database cloud Render lancar)
+        'pgsql' => [
+            'driver'         => 'pgsql',
+            'url'            => env('DATABASE_URL'), // Membaca URL penuh dari Render
+            'host'           => env('DB_HOST', '127.0.0.1'),
+            'port'           => env('DB_PORT', '5432'),
+            'database'       => env('DB_DATABASE', 'laravel'),
+            'username'       => env('DB_USERNAME', 'root'),
+            'password'       => env('DB_PASSWORD', ''),
+            'charset'        => env('DB_CHARSET', 'utf8'),
+            'prefix'         => '',
+            'prefix_indexes' => true,
+            'search_path'    => 'public',
+            'sslmode'        => 'prefer',
+        ],
+
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Migration Repository Table
+    |--------------------------------------------------------------------------
+    */
     'migrations' => [
         'table'  => 'migrations',
         'update_date_on_publish' => true,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Redis Databases
+    |--------------------------------------------------------------------------
+    */
     'redis' => [
         'client' => env('REDIS_CLIENT', 'phpredis'),
         'options' => [
