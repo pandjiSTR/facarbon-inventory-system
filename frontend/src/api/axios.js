@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: 'http://facarbon-api.test/api',
+  baseURL: 'https://itself-producers-newspaper-quiz.trycloudflare.com/api',
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',

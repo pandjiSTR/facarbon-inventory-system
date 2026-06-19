@@ -9,6 +9,10 @@ import Products from './pages/Products'
 import ProductForm from './pages/ProductForm'
 import StockIn from './pages/StockIn'
 import StockOut from './pages/StockOut'
+import Finances from './pages/Finances'
+import Invoices from './pages/Invoices'
+import Transactions from './pages/Transactions'
+import Reports from './pages/Reports'
 import Placeholder from './pages/Placeholder'
 
 function App() {
@@ -26,10 +30,10 @@ function App() {
               <Route path="products/:id/edit" element={<ProductForm />} />
               <Route path="stock-in"          element={<StockIn />} />
               <Route path="stock-out"         element={<StockOut />} />
-              <Route path="finances"          element={<Placeholder title="Keuangan" />} />
-              <Route path="invoices"          element={<Placeholder title="Faktur" />} />
-              <Route path="transactions"      element={<Placeholder title="Riwayat Transaksi" />} />
-              <Route path="reports"           element={<Placeholder title="Laporan" />} />
+              <Route path="finances"          element={<Finances />} />
+              <Route path="invoices"          element={<Invoices />} />
+              <Route path="transactions"      element={<Transactions />} />
+              <Route path="reports"           element={<Reports />} />
               <Route path="import"            element={<Placeholder title="Import Data" />} />
             </Route>
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

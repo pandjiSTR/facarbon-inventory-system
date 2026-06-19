@@ -7,4 +7,11 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    host: true,
+    allowedHosts: [
+      'returns-distributed-proceed-organizations.trycloudflare.com',
+      '.trycloudflare.com'
+    ]
+  }
 })
