@@ -58,13 +58,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
 });
 
-// ─── TEMPORARY ROUTE FOR MIGRATION (Taruh di luar middleware auth) ───────────
+// ─── TEMPORARY ROUTE FOR MIGRATION ───────────────────────────────────────────
 Route::get('/run-migration-facarbon', function () {
     try {
-        \Illuminate\Support\Facades\Artisan::call('migrate --force');
+        // 💡 KITA GANTI JADI REFRESH TOTAL BIAR TABEL LAMA DIHAPUS DULU
+        \Illuminate\Support\Facades\Artisan::call('migrate:fresh --force');
         return response()->json([
             'status' => 'success',
-            'message' => 'Database Facarbon berhasil dimigrasi!',
+            'message' => 'Database Facarbon BERHASIL di-reset dan dimigrasi total!',
             'output' => \Illuminate\Support\Facades\Artisan::output()
         ]);
     } catch (\Exception $e) {
