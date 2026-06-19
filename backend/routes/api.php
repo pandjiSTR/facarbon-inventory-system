@@ -57,22 +57,3 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf']);
 
 });
-
-
-// ─── TEMPORARY ROUTE UNTUK SEEDING ADMIN ─────────────────────────────────────
-Route::get('/run-seeder-facarbon', function () {
-    try {
-        // Ini bakal nge-run DatabaseSeeder lu buat bikin akun admin pertama
-        \Illuminate\Support\Facades\Artisan::call('db:seed --force');
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Akun Admin Facarbon BERHASIL dimasukkan ke cloud!',
-            'output' => \Illuminate\Support\Facades\Artisan::output()
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => $e->getMessage()
-        ], 500);
-    }
-});
