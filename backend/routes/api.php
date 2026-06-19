@@ -57,3 +57,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf']);
 
 });
+
+// ─── TEMPORARY ROUTE FOR MIGRATION (Taruh di luar middleware auth) ───────────
+Route::get('/run-migration-facarbon', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate --force');
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Database Facarbon berhasil dimigrasi!',
+            'output' => \Illuminate\Support\Facades\Artisan::output()
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+});
