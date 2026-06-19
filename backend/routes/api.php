@@ -57,21 +57,3 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf']);
 
 });
-
-// ─── TEMPORARY ROUTE FOR MIGRATION ───────────────────────────────────────────
-Route::get('/run-migration-facarbon', function () {
-    try {
-        // 💡 KITA GANTI JADI REFRESH TOTAL BIAR TABEL LAMA DIHAPUS DULU
-        \Illuminate\Support\Facades\Artisan::call('migrate:fresh --force');
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Database Facarbon BERHASIL di-reset dan dimigrasi total!',
-            'output' => \Illuminate\Support\Facades\Artisan::output()
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => $e->getMessage()
-        ], 500);
-    }
-});
