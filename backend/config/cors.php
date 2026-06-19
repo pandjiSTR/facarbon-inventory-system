@@ -18,11 +18,11 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'http://localhost:5173',
+        'https://facarbon-inventory.vercel.app', // 💡 Domain Production Vercel (Utama)
+        'http://localhost:5173',                  // Lokal Vite
         'http://127.0.0.1:5173',
-        'http://localhost:3000',
+        'http://localhost:3000',                  // Lokal React biasa/Next.js
         'http://127.0.0.1:3000',
-        'https://facarbon-inventory.vercel.app',
     ],
 
     'allowed_origins_patterns' => [],
@@ -33,8 +33,7 @@ return [
 
     'max_age' => 0,
 
-    // Diubah ke false karena frontend Facarbon menggunakan Bearer Token di localStorage, bukan cookie.
-    // Ini akan menyelesaikan error 'No Access-Control-Allow-Origin header is present'.
+    // 💡 Diubah ke false karena frontend Facarbon menggunakan Bearer Token di localStorage, bukan cookie bawaan browser.
     'supports_credentials' => false,
 
 ];
