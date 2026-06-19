@@ -172,7 +172,8 @@ Dokumentasi lengkap (SRS) tersedia di [`docs/SRS_FIS_Facarbon.docx`](docs/SRS_FI
 - [x] Frontend (React + Tailwind)
 - [x] Fitur import Excel
 - [x] Cetak faktur ke PDF
-- [ ] Deployment online
+- [x] Deployment online (Live Production via Render + Vercel)
+- [ ] Implementasi PWA (Progressive Web App) untuk kemudahan akses mobile browser
 
 ---
 
