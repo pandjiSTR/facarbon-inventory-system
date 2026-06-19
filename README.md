@@ -178,9 +178,9 @@ Dokumentasi lengkap (SRS) tersedia di [`docs/SRS_FIS_Facarbon.docx`](docs/SRS_FI
 
 ## 👤 Kontak
 
-**[Nama Kamu]**
-📧 email@contoh.com
-🔗 [LinkedIn](https://linkedin.com/in/username) · [GitHub](https://github.com/username)
+**[Mohammad Panji Satrio]**
+📧 pandjisatrio49@gmail.com
+🔗 [GitHub](https://github.com/pandjjiSTR)
 
 ---
 
