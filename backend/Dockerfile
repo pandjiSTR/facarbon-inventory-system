@@ -1,0 +1,38 @@
+FROM php:8.2-fpm-alpine
+
+# Install system dependencies & PHP extensions
+RUN apk add --no-cache \
+    nginx \
+    supervisor \
+    curl \
+    libpng-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+    git \
+    postgresql-dev
+
+RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql bcmath
+
+# Get latest Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Setup working directory
+WORKDIR /var/www
+
+# Copy project files
+COPY . .
+
+# Install dependencies
+RUN composer install --no-interaction --optimize-autoloader --no-dev
+
+# Setup Nginx configuration
+RUN mkdir -p /run/nginx
+COPY ./nginx.conf /etc/nginx/nginx.conf
+
+# Permissions
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+
+EXPOSE 80
+
+CMD ["sh", "-c", "nginx && php-fpm"]

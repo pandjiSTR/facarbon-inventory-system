@@ -4,10 +4,13 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | CORS Configuration
+    | Cross-Origin Resource Sharing (CORS) Configuration
     |--------------------------------------------------------------------------
-    | Mengizinkan React frontend (localhost:5173 / localhost:3000)
-    | untuk mengakses API Laravel ini.
+    |
+    | Here you may configure your settings for cross-origin resource sharing
+    | or "CORS". This determines what cross-origin operations may execute
+    | in web browsers. You are free to adjust these settings as needed.
+    |
     */
 
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
@@ -15,10 +18,11 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'http://localhost:3000',
         'http://localhost:5173',
-        'http://127.0.0.1:3000',
         'http://127.0.0.1:5173',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        'https://facarbon-inventory.vercel.app',
     ],
 
     'allowed_origins_patterns' => [],
@@ -29,6 +33,8 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => true,
+    // Diubah ke false karena frontend Facarbon menggunakan Bearer Token di localStorage, bukan cookie.
+    // Ini akan menyelesaikan error 'No Access-Control-Allow-Origin header is present'.
+    'supports_credentials' => false,
 
 ];

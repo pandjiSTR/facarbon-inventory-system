@@ -1,10 +1,12 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: 'https://itself-producers-newspaper-quiz.trycloudflare.com/api',
+  // Mengambil URL dari .env (VITE_API_URL) dan otomatis ditambah /api di ujungnya
+  baseURL: `${import.meta.env.VITE_API_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    'ngrok-skip-browser-warning': 'true',
   },
 })
 
