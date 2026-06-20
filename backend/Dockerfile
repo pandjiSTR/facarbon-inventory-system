@@ -2,17 +2,20 @@ FROM php:8.3-fpm-alpine
 
 # Install system dependencies & PHP extensions
 RUN apk add --no-cache \
-    nginx \
-    supervisor \
-    curl \
-    libpng-dev \
-    libxml2-dev \
-    zip \
-    unzip \
-    git \
-    postgresql-dev
+     nginx \
+     supervisor \
+     curl \
+     libpng-dev \
+     libxml2-dev \
+     zip \
+     unzip \
+     git \
+     postgresql-dev \
+     freetype-dev \
+     libjpeg-turbo-dev
 
-RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql bcmath
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql bcmath gd
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
