@@ -10,21 +10,13 @@ use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ImportController;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes — Facarbon Inventory System
-|--------------------------------------------------------------------------
-| Prefix: /api/
-| Auth: Laravel Sanctum token-based (Authorization: Bearer <token>)
-*/
-
-// ─── PUBLIC ROUTES (tidak butuh auth) ────────────────────────────────────────
+// ─── PUBLIC ───────────────────────────────────────────────────────────────────
 Route::prefix('auth')->group(function () {
     Route::post('/login',    [AuthController::class, 'login']);
-    Route::post('/register', [AuthController::class, 'register']); // bisa di-disable di production
+    Route::post('/register', [AuthController::class, 'register']);
 });
 
-// ─── PROTECTED ROUTES (butuh Sanctum token) ──────────────────────────────────
+// ─── PROTECTED ────────────────────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
 
     // Auth
@@ -33,7 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/me',      [AuthController::class, 'me']);
     });
 
-    // Dashboard & Summary
+    // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
     // Products
@@ -48,19 +40,25 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('stock-out', StockOutController::class)->except(['update']);
 
     // Finances
-    Route::get('/finances',         [FinanceController::class, 'index']);
+    Route::get('/finances/summary',  [FinanceController::class, 'summary']);
+    Route::get('/finances',          [FinanceController::class, 'index']);
     Route::get('/finances/{finance}',[FinanceController::class, 'show']);
-    Route::post('/finances',        [FinanceController::class, 'store']);   // manual entry
-    Route::get('/finances/summary', [FinanceController::class, 'summary']);
+    Route::post('/finances',         [FinanceController::class, 'store']);
 
     // Invoices
     Route::apiResource('invoices', InvoiceController::class)->except(['update']);
-    Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf']);
 
-    // Import Produk dari Excel
+    // Import Historis
     Route::prefix('import')->group(function () {
-        Route::post('/preview', [ImportController::class, 'preview']);
-        Route::post('/confirm', [ImportController::class, 'confirm']);
+        // Keuangan
+        Route::post('/finance/preview',    [ImportController::class, 'financePreview']);
+        Route::post('/finance/confirm',    [ImportController::class, 'financeConfirm']);
+        // Barang Masuk
+        Route::post('/stock-in/preview',   [ImportController::class, 'stockInPreview']);
+        Route::post('/stock-in/confirm',   [ImportController::class, 'stockInConfirm']);
+        // Barang Keluar
+        Route::post('/stock-out/preview',  [ImportController::class, 'stockOutPreview']);
+        Route::post('/stock-out/confirm',  [ImportController::class, 'stockOutConfirm']);
     });
 
 });

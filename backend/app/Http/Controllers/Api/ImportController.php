@@ -3,8 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Imports\ProductImport;
+use App\Imports\FinanceImport;
+use App\Imports\StockInImport;
+use App\Imports\StockOutImport;
+use App\Models\Finance;
 use App\Models\Product;
+use App\Models\StockIn;
+use App\Models\StockOut;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -12,132 +17,287 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ImportController extends Controller
 {
-    /**
-     * POST /api/import/preview
-     *
-     * Upload file Excel, parse & validasi tiap baris,
-     * kembalikan preview data + status validasi tanpa menyimpan ke DB.
-     */
-    public function preview(Request $request): JsonResponse
+    // ══════════════════════════════════════════════════════════════════════════
+    // IMPORT KEUANGAN
+    // ══════════════════════════════════════════════════════════════════════════
+
+    public function financePreview(Request $request): JsonResponse
     {
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls|max:5120', // max 5MB
-        ], [
-            'file.required' => 'File Excel wajib diupload.',
-            'file.mimes'    => 'File harus berformat .xlsx atau .xls.',
-            'file.max'      => 'Ukuran file maksimal 5MB.',
+            'file' => 'required|file|mimes:xlsx,xls|max:5120',
+        ]);
+
+        \Log::info('File received:', [
+            'name' => $request->file('file')->getClientOriginalName(),
+            'size' => $request->file('file')->getSize(),
+            'mime' => $request->file('file')->getMimeType(),
         ]);
 
         try {
-            $import = new ProductImport();
+            $import = new FinanceImport();
             Excel::import($import, $request->file('file'));
+
+            \Log::info('Rows parsed: ' . count($import->getRows()));
 
             $rows = $import->getRows();
 
             if (empty($rows)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'File Excel kosong atau format header tidak sesuai.',
-                    'hint'    => 'Pastikan header baris 1 adalah: SKU | Nama Produk | Carbon Type | Kompatibilitas Vespa | Harga Modal | Harga Reseller | Harga Online',
+                    'message' => 'File kosong atau format header tidak sesuai.',
+                    'hint'    => 'Header harus: Tanggal | Keterangan | Debit | Kredit',
                 ], 422);
             }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Preview berhasil. Periksa data sebelum konfirmasi import.',
-                'data'    => [
-                    'total_rows'   => count($rows),
-                    'valid_rows'   => $import->getValidCount(),
-                    'invalid_rows' => $import->getInvalidCount(),
-                    'rows'         => $rows,
-                ],
+                'data'    => ['total_rows' => count($rows), 'rows' => $rows],
             ]);
-
-        } catch (\Maatwebsite\Excel\Exceptions\UnreadableFileException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'File tidak bisa dibaca. Pastikan file tidak corrupt.',
-            ], 422);
         } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal memproses file: ' . $e->getMessage(),
-            ], 500);
+            \Log::error('Finance preview error: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Gagal memproses file: ' . $e->getMessage()], 500);
         }
     }
 
-    /**
-     * POST /api/import/confirm
-     *
-     * Terima array produk valid dari frontend (hasil preview yang sudah dikoreksi),
-     * insert semua ke DB dalam satu transaction.
-     *
-     * Body: { "products": [ { sku, name, carbon_type, vespa_compatibility, modal_price, reseller_price, online_price }, ... ] }
-     */
-    public function confirm(Request $request): JsonResponse
+    public function financeConfirm(Request $request): JsonResponse
     {
         $request->validate([
-            'products'                          => 'required|array|min:1',
-            'products.*.sku'                    => 'required|string|max:20|distinct|unique:products,sku',
-            'products.*.name'                   => 'required|string|max:255',
-            'products.*.carbon_type'            => 'required|in:twill,forged,plain',
-            'products.*.vespa_compatibility'    => 'required|array|min:1',
-            'products.*.vespa_compatibility.*'  => 'required|string',
-            'products.*.modal_price'            => 'required|integer|min:0',
-            'products.*.reseller_price'         => 'required|integer|min:0',
-            'products.*.online_price'           => 'nullable|integer|min:0',
-        ], [
-            'products.*.sku.unique'    => 'SKU :input sudah terdaftar di database.',
-            'products.*.sku.distinct'  => 'SKU :input duplikat dalam data yang dikirim.',
-            'products.*.carbon_type.in' => 'Carbon type harus salah satu dari: twill, forged, plain.',
+            'records'               => 'required|array|min:1',
+            'records.*.date'        => 'required|date',
+            'records.*.description' => 'required|string',
+            'records.*.type'        => 'required|in:debit,kredit',
+            'records.*.category'    => 'required|in:pembelian_stok,produksi,penjualan,operasional,lain_lain',
+            'records.*.amount'      => 'required|integer|min:1',
         ]);
 
-        $products    = $request->input('products');
-        $imported    = 0;
-        $failed      = [];
-
+        $imported = 0;
         DB::beginTransaction();
         try {
-            foreach ($products as $index => $item) {
-                // vespa_compatibility disimpan sebagai string (join dengan koma)
-                // sesuai schema kolom VARCHAR di tabel products
-                $vespaValue = is_array($item['vespa_compatibility'])
-                    ? implode(', ', $item['vespa_compatibility'])
-                    : $item['vespa_compatibility'];
+            foreach ($request->input('records') as $record) {
+                Finance::create([
+                    'user_id'     => $request->user()->id,
+                    'date'        => $record['date'],
+                    'description' => $record['description'],
+                    'type'        => $record['type'],
+                    'category'    => $record['category'],
+                    'amount'      => $record['amount'],
+                    'notes'       => $record['notes'] ?? 'Import historis',
+                ]);
+                $imported++;
+            }
+            DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => "Import keuangan berhasil. {$imported} catatan ditambahkan.",
+                'data'    => ['imported' => $imported, 'failed' => 0, 'errors' => []],
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Import gagal: ' . $e->getMessage()], 500);
+        }
+    }
 
-                Product::create([
-                    'sku'                 => strtoupper(trim($item['sku'])),
-                    'name'                => trim($item['name']),
-                    'carbon_type'         => $item['carbon_type'],
-                    'vespa_compatibility' => $vespaValue,
-                    'modal_price'         => $item['modal_price'],
-                    'reseller_price'      => $item['reseller_price'],
-                    'online_price'        => $item['online_price'] ?? null,
-                    'current_stock'       => 0,
-                    'is_active'           => true,
+    // ══════════════════════════════════════════════════════════════════════════
+    // IMPORT BARANG MASUK
+    // ══════════════════════════════════════════════════════════════════════════
+
+    public function stockInPreview(Request $request): JsonResponse
+    {
+        $request->validate(['file' => 'required|file|mimes:xlsx,xls|max:5120']);
+
+        try {
+            $import = new StockInImport();
+            Excel::import($import, $request->file('file'));
+            $rows = $import->getRows();
+
+            if (empty($rows)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File kosong atau format header tidak sesuai.',
+                    'hint'    => 'Header harus: Tanggal | ITEM | MATERIAL | CARBON TYPE | QTY',
+                ], 422);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data'    => [
+                    'total_rows'         => count($rows),
+                    'rows'               => $rows,
+                    'available_products' => $import->getAvailableProducts(),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Gagal memproses file: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function stockInConfirm(Request $request): JsonResponse
+    {
+        $request->validate([
+            'records'               => 'required|array|min:1',
+            'records.*.product_id'  => 'required|exists:products,id',
+            'records.*.quantity'    => 'required|integer|min:1',
+            'records.*.modal_price' => 'required|integer|min:0',
+            'records.*.date'        => 'required|date',
+            'records.*.category'    => 'required|in:pembelian_stok,produksi',
+        ]);
+
+        $imported = 0;
+        DB::beginTransaction();
+        try {
+            foreach ($request->input('records') as $record) {
+                $product = Product::findOrFail($record['product_id']);
+
+                $stockIn = StockIn::create([
+                    'product_id'  => $product->id,
+                    'user_id'     => $request->user()->id,
+                    'quantity'    => $record['quantity'],
+                    'modal_price' => $record['modal_price'],
+                    'category'    => $record['category'],
+                    'date'        => $record['date'],
+                    'notes'       => $record['notes'] ?? 'Import historis',
+                ]);
+
+                $product->recalculateStock();
+
+                Finance::create([
+                    'user_id'     => $request->user()->id,
+                    'stock_in_id' => $stockIn->id,
+                    'date'        => $record['date'],
+                    'description' => "Import historis: {$product->name} ({$product->sku}) x{$record['quantity']}",
+                    'category'    => $record['category'],
+                    'type'        => 'debit',
+                    'amount'      => $record['quantity'] * $record['modal_price'],
+                    'notes'       => 'Import historis',
                 ]);
 
                 $imported++;
             }
-
             DB::commit();
+            return response()->json([
+                'success' => true,
+                'message' => "Import barang masuk berhasil. {$imported} dicatat.",
+                'data'    => ['imported' => $imported, 'failed' => 0, 'errors' => []],
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['success' => false, 'message' => 'Import gagal: ' . $e->getMessage()], 500);
+        }
+    }
+
+
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // IMPORT BARANG KELUAR
+    // ══════════════════════════════════════════════════════════════════════════
+
+    public function stockOutPreview(Request $request): JsonResponse
+    {
+        $request->validate(['file' => 'required|file|mimes:xlsx,xls|max:5120']);
+
+        try {
+            $import = new StockOutImport();
+            Excel::import($import, $request->file('file'));
+            $rows = $import->getRows();
+
+            if (empty($rows)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File kosong atau format header tidak sesuai.',
+                    'hint'    => 'Header harus: Tanggal | Item | Material | Carbon Type | QTY',
+                ], 422);
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => "{$imported} produk berhasil diimport.",
                 'data'    => [
-                    'imported' => $imported,
-                    'failed'   => count($failed),
-                    'errors'   => $failed,
+                    'total_rows'         => count($rows),
+                    'rows'               => $rows,
+                    'available_products' => $import->getAvailableProducts(),
                 ],
-            ], 201);
-
+            ]);
         } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Import gagal, semua data dibatalkan: ' . $e->getMessage(),
-            ], 500);
+            return response()->json(['success' => false, 'message' => 'Gagal memproses file: ' . $e->getMessage()], 500);
         }
+    }
+
+    public function stockOutConfirm(Request $request): JsonResponse
+    {
+        $request->validate([
+            'records'              => 'required|array|min:1',
+            'records.*.product_id' => 'required|exists:products,id',
+            'records.*.quantity'   => 'required|integer|min:1',
+            'records.*.sell_price' => 'required|integer|min:0',
+            'records.*.channel'    => 'required|in:reseller,online,langsung',
+            'records.*.date'       => 'required|date',
+        ]);
+
+        $imported = 0;
+        $failed   = 0;
+        $errors   = [];
+
+        // Per-record transaction — stok tidak cukup = skip, bukan rollback semua
+        foreach ($request->input('records') as $index => $record) {
+            $product = Product::find($record['product_id']);
+
+            if (!$product) {
+                $failed++;
+                $errors[] = ['index' => $index + 1, 'reason' => 'Produk tidak ditemukan'];
+                continue;
+            }
+
+            if ($product->current_stock < $record['quantity']) {
+                $failed++;
+                $errors[] = [
+                    'index'     => $index + 1,
+                    'item_name' => $product->name,
+                    'reason'    => "Stok tidak cukup. Tersedia: {$product->current_stock}, dibutuhkan: {$record['quantity']}",
+                ];
+                continue;
+            }
+
+            try {
+                DB::beginTransaction();
+
+                $stockOut = StockOut::create([
+                    'product_id' => $product->id,
+                    'user_id'    => $request->user()->id,
+                    'quantity'   => $record['quantity'],
+                    'channel'    => $record['channel'],
+                    'sell_price' => $record['sell_price'],
+                    'date'       => $record['date'],
+                    'notes'      => $record['notes'] ?? 'Import historis',
+                ]);
+
+                $product->recalculateStock();
+
+                Finance::create([
+                    'user_id'      => $request->user()->id,
+                    'stock_out_id' => $stockOut->id,
+                    'date'         => $record['date'],
+                    'description'  => "Import historis: {$product->name} ({$product->sku}) x{$record['quantity']} via {$record['channel']}",
+                    'category'     => 'penjualan',
+                    'type'         => 'kredit',
+                    'amount'       => $record['quantity'] * $record['sell_price'],
+                    'notes'        => 'Import historis',
+                ]);
+
+                DB::commit();
+                $imported++;
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                $failed++;
+                $errors[] = ['index' => $index + 1, 'item_name' => $product->name, 'reason' => $e->getMessage()];
+            }
+        }
+
+        $message = "Import barang keluar berhasil. {$imported} dicatat" . ($failed > 0 ? ", {$failed} dilewati" : '') . '.';
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data'    => ['imported' => $imported, 'failed' => $failed, 'errors' => $errors],
+        ], 201);
     }
 }
