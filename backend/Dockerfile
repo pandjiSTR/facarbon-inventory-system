@@ -1,6 +1,7 @@
 FROM php:8.3-fpm-alpine
 
 # Install system dependencies & PHP extensions
+# 1. Tambahkan libzip-dev di bagian apk add
 RUN apk add --no-cache \
      nginx \
      supervisor \
@@ -12,10 +13,11 @@ RUN apk add --no-cache \
      git \
      postgresql-dev \
      freetype-dev \
-     libjpeg-turbo-dev
+     libjpeg-turbo-dev \
+     libzip-dev
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_mysql pdo_pgsql bcmath gd
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql bcmath gd zip
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
