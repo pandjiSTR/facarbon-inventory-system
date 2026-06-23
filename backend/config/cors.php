@@ -19,6 +19,7 @@ return [
 
     'allowed_origins' => [
         'https://facarbon-inventory-system.vercel.app', // 💡 Domain Production Vercel (Utama)
+        'https://facarbon-inventory-system-r8c5sz74h-uletbulujawa.vercel.app',
         'http://localhost:5173',                  // Lokal Vite
         'http://127.0.0.1:5173',
         'http://localhost:3000',                  // Lokal React biasa/Next.js
