@@ -4,8 +4,10 @@ Sistem manajemen inventori & keuangan berbasis web untuk **Facarbon** — toko a
 
 > 🎓 Proyek ini dikembangkan sebagai tugas kuliah dengan studi kasus usaha nyata.
 
-![Status](https://img.shields.io/badge/status-in%20development-yellow)
+![Status](https://img.shields.io/badge/status-complete-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
+
+🌐 **Live Demo:** [facarbon-inventory-system.vercel.app](https://facarbon-inventory-system.vercel.app/)
 
 ---
 
@@ -28,13 +30,13 @@ FIS dikembangkan untuk menjawab masalah-masalah tersebut dengan pendekatan siste
 | Modul | Deskripsi |
 |---|---|
 | 📦 **Manajemen Produk** | CRUD produk dengan atribut jenis carbon (forged/twill), kompatibilitas Vespa, dan 3 tingkat harga (modal, reseller, online) |
-| 📥 **Stok Masuk** | Pencatatan penerimaan barang, otomatis tercatat di modul keuangan |
-| 📤 **Stok Keluar** | Pencatatan penjualan per channel (reseller/online) dengan harga yang dapat disesuaikan |
-| 💰 **Keuangan** | Pencatatan otomatis dari transaksi stok + input manual, dengan ringkasan saldo |
-| 🧾 **Faktur** | Pembuatan invoice/faktur penjualan yang dapat diekspor ke PDF |
+| 📥 **Stok Masuk** | Pencatatan penerimaan barang per kategori (pembelian/produksi), otomatis tercatat di modul keuangan |
+| 📤 **Stok Keluar** | Pencatatan penjualan per channel (reseller/online/langsung) dengan harga yang dapat disesuaikan |
+| 💰 **Keuangan** | Pencatatan otomatis dari transaksi stok + input manual, dengan ringkasan saldo bulanan/tahunan |
+| 🧾 **Faktur** | Pembuatan invoice multi-item dengan nomor auto-generate, otomatis membuat stok keluar & catatan keuangan |
 | 📊 **Dashboard & Analitik** | Visualisasi data stok dan keuangan dalam grafik interaktif |
 | 🔔 **Notifikasi Stok Kosong** | Peringatan otomatis untuk produk dengan stok = 0 |
-| 📑 **Import Excel** | Migrasi data produk dari spreadsheet Excel yang sudah ada |
+| 📑 **Import Excel** | Import data historis keuangan, stok masuk, dan stok keluar dari spreadsheet Excel (dengan preview sebelum konfirmasi) |
 | 🌓 **Responsive Design** | Dapat diakses dari desktop maupun mobile |
 
 ---
@@ -48,13 +50,18 @@ FIS dikembangkan untuk menjawab masalah-masalah tersebut dengan pendekatan siste
 ![Recharts](https://img.shields.io/badge/Recharts-Charts-8884d8)
 
 **Backend**
-![Laravel](https://img.shields.io/badge/Laravel-11-FF2D20?logo=laravel&logoColor=white)
-![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white)
+![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-8.3-777BB4?logo=php&logoColor=white)
 ![Sanctum](https://img.shields.io/badge/Auth-Sanctum-FF2D20)
+![Excel](https://img.shields.io/badge/Excel-Maatwebsite_3.1-217346?logo=microsoftexcel&logoColor=white)
 
 **Database & Tools**
 ![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?logo=mysql&logoColor=white)
 ![Laragon](https://img.shields.io/badge/Dev%20Env-Laragon-1E90FF)
+
+**Deployment**
+![Vercel](https://img.shields.io/badge/Frontend-Vercel-000000?logo=vercel&logoColor=white)
+![Render](https://img.shields.io/badge/Backend%20%26%20DB-Render-46E3B7?logo=render&logoColor=white)
 
 ---
 
@@ -96,7 +103,7 @@ Sistem menggunakan tema **dark mode** dengan aksen *gold carbon* yang merepresen
 
 ```
 facarbon-inventory-system/
-├── backend/              # Laravel REST API
+├── backend/              # Laravel 13 REST API
 │   ├── app/
 │   ├── database/
 │   └── routes/
@@ -115,13 +122,13 @@ facarbon-inventory-system/
 ## 🚀 Instalasi & Menjalankan Secara Lokal
 
 ### Prasyarat
-- [Laragon](https://laragon.org/) (PHP 8.2+, MySQL 8+, Node.js 18+)
+- [Laragon](https://laragon.org/) (PHP 8.3+, MySQL 8+, Node.js 18+)
 - Composer
 - Git
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/USERNAME/facarbon-inventory-system.git
+git clone https://github.com/pandjiSTR/facarbon-inventory-system.git
 cd facarbon-inventory-system
 ```
 
@@ -136,6 +143,7 @@ Sesuaikan konfigurasi database di `.env`, lalu jalankan migrasi:
 ```bash
 php artisan migrate --seed
 php artisan serve
+# API tersedia di http://127.0.0.1:8000
 ```
 
 ### 3. Setup Frontend (React)
@@ -143,37 +151,84 @@ php artisan serve
 cd ../frontend
 npm install
 npm run dev
+# App tersedia di http://localhost:5173
 ```
 
-### 4. Akses Aplikasi
-Buka browser ke `http://localhost:5173` (atau sesuai port yang ditampilkan).
+### 4. Akun Default (Seeder)
+| Role | Email | Password |
+|---|---|---|
+| Admin | admin@facarbon.com | facarbon123 |
+| Staff | staff@facarbon.com | facarbon123 |
 
 ---
 
-## 🗄️ Skema Database (Ringkasan)
+## 🌐 Deployment
+
+| Layanan | Platform | Keterangan |
+|---|---|---|
+| Frontend | [Vercel](https://vercel.com) | Auto-deploy dari branch `main` |
+| Backend API | [Render](https://render.com) | Laravel REST API |
+| Database | [Render](https://render.com) | MySQL 8 |
+
+---
+
+## 🗄️ Skema Database
 
 | Tabel | Fungsi |
 |---|---|
 | `users` | Data pengguna sistem |
-| `products` | Master data produk |
+| `products` | Master data produk (24 SKU, FAC-001 s/d FAC-024) |
 | `stock_in` | Transaksi stok masuk |
 | `stock_out` | Transaksi stok keluar |
-| `finances` | Pencatatan keuangan |
-| `invoices` & `invoice_items` | Data faktur penjualan |
+| `finances` | Pencatatan keuangan (otomatis & manual) |
+| `invoices` | Header faktur penjualan |
+| `invoice_items` | Detail item per faktur |
 
 Dokumentasi lengkap (SRS) tersedia di [`docs/SRS_FIS_Facarbon.docx`](docs/SRS_FIS_Facarbon.docx).
+
+---
+
+## 🔌 API Endpoints (32 Endpoint)
+
+Semua endpoint protected membutuhkan header `Authorization: Bearer {token}`
+
+| Method | Endpoint | Fungsi |
+|---|---|---|
+| POST | `/api/auth/login` | Login |
+| POST | `/api/auth/logout` | Logout |
+| GET | `/api/auth/me` | Info user login |
+| GET | `/api/dashboard` | Data dashboard |
+| GET/POST | `/api/products` | List & tambah produk |
+| GET/PUT/DELETE | `/api/products/{id}` | Detail, edit, hapus |
+| PATCH | `/api/products/{id}/toggle-active` | Aktif/nonaktif produk |
+| GET | `/api/products/{id}/stock-history` | Riwayat stok produk |
+| GET/POST | `/api/stock-in` | List & catat stok masuk |
+| GET/DELETE | `/api/stock-in/{id}` | Detail & hapus stok masuk |
+| GET/POST | `/api/stock-out` | List & catat stok keluar |
+| GET/DELETE | `/api/stock-out/{id}` | Detail & hapus stok keluar |
+| GET/POST | `/api/finances` | List & entry manual keuangan |
+| GET | `/api/finances/summary` | Summary keuangan |
+| GET | `/api/finances/{id}` | Detail catatan keuangan |
+| GET/POST | `/api/invoices` | List & buat invoice |
+| GET/DELETE | `/api/invoices/{id}` | Detail & hapus invoice |
+| POST | `/api/import/finance/preview` | Preview import keuangan |
+| POST | `/api/import/finance/confirm` | Konfirmasi import keuangan |
+| POST | `/api/import/stock-in/preview` | Preview import stok masuk |
+| POST | `/api/import/stock-in/confirm` | Konfirmasi import stok masuk |
+| POST | `/api/import/stock-out/preview` | Preview import stok keluar |
+| POST | `/api/import/stock-out/confirm` | Konfirmasi import stok keluar |
 
 ---
 
 ## 🗺️ Roadmap
 
 - [x] Penyusunan SRS
-- [x] Backend API (Laravel + Sanctum)
-- [x] Frontend (React + Tailwind)
-- [x] Fitur import Excel
+- [x] Backend API (Laravel + Sanctum) — 32 endpoint
+- [x] Frontend (React + Tailwind) — 10 halaman
+- [x] Fitur import Excel (keuangan, stok masuk, stok keluar)
 - [x] Cetak faktur ke PDF
-- [x] Deployment online (Live Production via Render + Vercel)
-- [ ] Implementasi PWA (Progressive Web App) untuk kemudahan akses mobile browser
+- [x] Deployment online (Vercel + Render)
+- [ ] Mobile responsive (PWA)
 
 ---
 
