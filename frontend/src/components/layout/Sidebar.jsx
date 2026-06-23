@@ -1,6 +1,8 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
+import logoDark from '../../assets/logo-facarbon-dark.png'
+import logoWhite from '../../assets/logo-facarbon-white.png'
 import {
   LayoutDashboard, Package, ArrowDownToLine, ArrowUpFromLine,
   DollarSign, FileText, History, BarChart3, Upload, LogOut,
@@ -21,7 +23,7 @@ const navItems = [
 
 export default function Sidebar({ lowStockCount = 0 }) {
   const { user, logout } = useAuth()
-  const { theme, toggle } = useTheme()
+  const { theme, toggle, isDark } = useTheme()
   const navigate = useNavigate()
 
   const handleLogout = async () => {
@@ -40,21 +42,17 @@ export default function Sidebar({ lowStockCount = 0 }) {
     }}>
       {/* Logo */}
       <div style={{ padding: '20px 18px 16px', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 32, height: 32, background: 'var(--accent)',
-            borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-          }}>
-            <span style={{ color: '#fff', fontWeight: 700, fontSize: 14, fontFamily: 'Inter, sans-serif' }}>F</span>
-          </div>
-          <div>
-            <div style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 13, letterSpacing: '0.04em', lineHeight: 1.2, fontFamily: 'Inter, sans-serif' }}>
-              FACARBON
-            </div>
-            <div style={{ color: 'var(--text-muted)', fontSize: 10, letterSpacing: '0.08em', fontFamily: 'Inter, sans-serif' }}>
-              INVENTORY SYSTEM
-            </div>
-          </div>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: '4px', borderRadius: 10,
+          border: '1px solid var(--border)',
+          background: 'var(--bg-elevated)',
+        }}>
+          <img
+            src={isDark ? logoWhite : logoDark}
+            alt="Facarbon"
+            style={{ height: 84, width: 'auto', objectFit: 'contain' }}
+          />
         </div>
       </div>
 

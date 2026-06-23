@@ -1,9 +1,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTheme } from '../context/ThemeContext'
+import logoDark from '../assets/logo-facarbon-dark.png'
+import logoWhite from '../assets/logo-facarbon-white.png'
 
 export default function Login() {
   const { login, loading } = useAuth()
+  const { isDark } = useTheme()
   const navigate = useNavigate()
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
@@ -35,13 +39,17 @@ export default function Login() {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <div style={{
-            width: 48, height: 48,
-            background: 'var(--accent)',
-            borderRadius: 12,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 16px',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            padding: '20px 28px', borderRadius: 14,
+            border: '1px solid var(--border)',
+            background: 'var(--bg-elevated)',
+            marginBottom: 16,
           }}>
-            <span style={{ color: '#0d0d0d', fontWeight: 800, fontSize: 22, fontFamily: 'Inter, sans-serif' }}>F</span>
+            <img
+              src={isDark ? logoWhite : logoDark}
+              alt="Facarbon"
+              style={{ height: 120, width: 'auto', objectFit: 'contain', display: 'block' }}
+            />
           </div>
           <h1 className="font-ui" style={{ color: 'var(--accent)', fontWeight: 700, fontSize: 18, letterSpacing: '0.05em', marginBottom: 4 }}>
             FACARBON
@@ -49,8 +57,7 @@ export default function Login() {
           <p style={{ color: 'var(--text-muted)', fontSize: 12, letterSpacing: '0.08em', fontFamily: 'Inter, sans-serif' }}>
             INVENTORY SYSTEM
           </p>
-        </div>
-
+          </div>
         {/* Card */}
         <div style={{
           background: 'var(--bg-surface)',

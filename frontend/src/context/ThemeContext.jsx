@@ -18,9 +18,10 @@ export function ThemeProvider({ children }) {
   }, [theme])
 
   const toggle = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
+  const isDark = theme === 'dark'
 
   return (
-    <ThemeContext.Provider value={{ theme, toggle }}>
+    <ThemeContext.Provider value={{ theme, toggle, isDark }}>
       {children}
     </ThemeContext.Provider>
   )
