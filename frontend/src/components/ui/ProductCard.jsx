@@ -138,14 +138,27 @@ export default function ProductCard({ product, onEdit, onDelete, onToggle, toggl
             <StockBadge stock={p.current_stock} />
           </div>
 
-          {/* Price */}
-          <p style={{
-            fontFamily: 'JetBrains Mono, monospace', fontSize: 14, fontWeight: 600,
-            color: 'var(--accent)', margin: 0,
-            marginBottom: 12,
-          }}>
-            {fmt(p.reseller_price)}
-          </p>
+          {/* Prices */}
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: 'var(--text-muted)', fontWeight: 500 }}>
+                Reseller
+              </span>
+              <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 13, fontWeight: 600, color: 'var(--accent)' }}>
+                {fmt(p.reseller_price)}
+              </span>
+            </div>
+            {p.online_price != null && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 }}>
+                <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 10, color: 'var(--text-muted)', fontWeight: 500 }}>
+                  Online
+                </span>
+                <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)' }}>
+                  {fmt(p.online_price)}
+                </span>
+              </div>
+            )}
+          </div>
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: 6 }}>
