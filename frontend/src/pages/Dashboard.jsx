@@ -95,9 +95,9 @@ export default function Dashboard() {
   const { products, stock, finances, invoices, alerts } = data
 
   // Bar chart: carbon type distribution from out_of_stock_products
-  // We count by type from alerts; ideally comes from a dedicated endpoint
+  const emptyStock = alerts?.out_of_stock_products ?? []
   const carbonTypeMap = {}
-  alerts.out_of_stock_products.forEach(p => {
+  emptyStock.forEach(p => {
     const t = CARBON_LABELS[p.carbon_type] || p.carbon_type
     carbonTypeMap[t] = (carbonTypeMap[t] || 0) + 1
   })
@@ -243,9 +243,9 @@ export default function Dashboard() {
       </div>
 
       {/* Alert: Out of Stock Products */}
-      {alerts.out_of_stock_products.length > 0 && (
+      {emptyStock.length > 0 && (
         <div>
-          <SectionTitle>Produk Stok Kosong ({alerts.out_of_stock_products.length})</SectionTitle>
+          <SectionTitle>Produk Stok Kosong ({emptyStock.length})</SectionTitle>
           <div style={{
             background: 'var(--bg-surface)',
             border: '1px solid var(--border)',
@@ -273,11 +273,11 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {alerts.out_of_stock_products.map((p, i) => (
+                {emptyStock.map((p, i) => (
                   <tr
                     key={p.id}
                     style={{
-                      borderBottom: i < alerts.out_of_stock_products.length - 1 ? '1px solid var(--border)' : 'none',
+                      borderBottom: i < emptyStock.length - 1 ? '1px solid var(--border)' : 'none',
                       transition: 'background 0.1s',
                     }}
                     onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-elevated)'}
