@@ -8,7 +8,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -40,20 +40,16 @@ class AppServiceProvider extends ServiceProvider
 
     private function validateEnvironment(): void
     {
-        if (App::runningInConsole()) {
-            return;
-        }
-
-        $required = ['app.key'];
+        $checks = ['app.key'];
 
         if (App::environment('production')) {
-            $required[] = 'database.connections.mysql.database';
-            $required[] = 'database.connections.mysql.username';
+            $checks[] = 'database.connections.mysql.database';
+            $checks[] = 'database.connections.mysql.username';
         }
 
-        foreach ($required as $key) {
+        foreach ($checks as $key) {
             if (empty(Config::get($key))) {
-                throw new \RuntimeException("Missing required config key: {$key}");
+                Log::warning("Missing required config key: {$key}");
             }
         }
     }
