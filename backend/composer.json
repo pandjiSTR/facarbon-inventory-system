@@ -1,7 +1,8 @@
 {
-    "name": "laravel/laravel",
+    "name": "facarbon/inventory-system",
     "type": "project",
     "description": "Facarbon Inventory System",
+    "license": "proprietary",
     "require": {
         "php": "^8.2",
         "laravel/framework": "^13.0",
