@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Edit2, Trash2, ToggleLeft, ToggleRight, AlertCircle } from 'lucide-react'
 import ImageModal from './ImageModal'
-import ImageTooltip from './ImageTooltip'
 
 const fmt = (n) =>
   n != null
@@ -116,21 +115,19 @@ export default function ProductCard({ product, onEdit, onDelete, onToggle, onSho
         {/* Info area */}
         <div style={{ padding: '12px 14px 14px' }}>
           {/* Name */}
-          <ImageTooltip src={p.photo_url} alt={p.name}>
-            <h3
-              onClick={() => onShowDetail?.(p)}
-              style={{
-                fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 600,
-                color: 'var(--text-primary)', margin: 0,
-                marginBottom: 2, lineHeight: 1.3,
-                cursor: 'pointer',
-              }}
-              onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
-              onMouseLeave={e => e.currentTarget.style.color = 'var(--text-primary)'}
-            >
-              {p.name}
-            </h3>
-          </ImageTooltip>
+          <h3
+            onClick={() => onShowDetail?.(p)}
+            style={{
+              fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 600,
+              color: 'var(--text-primary)', margin: 0,
+              marginBottom: 2, lineHeight: 1.3,
+              cursor: 'pointer',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-primary)'}
+          >
+            {p.name}
+          </h3>
 
           {/* SKU */}
           <p style={{

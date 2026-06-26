@@ -6,17 +6,25 @@ export default function ImageTooltip({ src, alt, children }) {
   const timer = useRef(null)
   const wrapperRef = useRef(null)
 
+  const IMG_W = 180
+  const TEXT_W = 32
+  const GAP = 8
+
   const handleEnter = useCallback(() => {
-    if (!src) return
     const el = wrapperRef.current
     if (!el) return
     const rect = el.getBoundingClientRect()
-    const tooltipW = 180
-    let left = rect.left
-    if (left + tooltipW > window.innerWidth - 8) {
-      left = window.innerWidth - tooltipW - 8
+    const w = src ? IMG_W : 130
+    let left = rect.right + GAP
+    if (left + w > window.innerWidth - 8) {
+      left = window.innerWidth - w - 8
     }
-    setPos({ top: rect.bottom + 6, left })
+    const h = src ? IMG_W + TEXT_W + 4 : 36
+    let top = rect.top
+    if (top + h > window.innerHeight - 8) {
+      top = window.innerHeight - h - 8
+    }
+    setPos({ top, left })
     timer.current = setTimeout(() => setShow(true), 250)
   }, [src])
 
@@ -37,27 +45,70 @@ export default function ImageTooltip({ src, alt, children }) {
       style={{ position: 'relative', display: 'inline' }}
     >
       {children}
+
+      {/* Image preview */}
       {show && src && (
         <div style={{
           position: 'fixed',
           top: pos.top,
           left: pos.left,
           zIndex: 999,
-          width: 180,
-          height: 180,
-          borderRadius: 8,
-          overflow: 'hidden',
-          border: '1px solid var(--border)',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
-          background: 'var(--bg-elevated)',
-          pointerEvents: 'none',
           animation: 'fadeIn 0.12s ease-out',
         }}>
-          <img
-            src={src}
-            alt={alt || ''}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
+          {/* Gambar */}
+          <div style={{
+            width: IMG_W,
+            height: IMG_W,
+            borderRadius: 8,
+            overflow: 'hidden',
+            border: '1px solid var(--border)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+            background: 'var(--bg-elevated)',
+          }}>
+            <img
+              src={src}
+              alt={alt || ''}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+          </div>
+          {/* Label */}
+          <div style={{
+            marginTop: 4,
+            padding: '5px 0',
+            borderRadius: 6,
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+            textAlign: 'center',
+            fontSize: 11,
+            color: 'var(--text-secondary)',
+            pointerEvents: 'none',
+            whiteSpace: 'nowrap',
+          }}>
+            klik untuk detail produk
+          </div>
+        </div>
+      )}
+
+      {/* Text fallback — no image */}
+      {show && !src && (
+        <div style={{
+          position: 'fixed',
+          top: pos.top,
+          left: pos.left,
+          zIndex: 999,
+          padding: '8px 12px',
+          borderRadius: 6,
+          background: 'var(--bg-elevated)',
+          border: '1px solid var(--border)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+          fontSize: 12,
+          color: 'var(--text-secondary)',
+          pointerEvents: 'none',
+          whiteSpace: 'nowrap',
+          animation: 'fadeIn 0.12s ease-out',
+        }}>
+          Tidak ada gambar
         </div>
       )}
     </span>
