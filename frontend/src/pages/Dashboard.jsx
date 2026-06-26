@@ -95,9 +95,9 @@ export default function Dashboard() {
   const { products, stock, finances, invoices, alerts } = data
 
   // Bar chart: carbon type distribution from out_of_stock_products
-  const emptyStock = alerts?.out_of_stock_products ?? []
+  const stockAlerts = Array.isArray(alerts?.out_of_stock_products) ? alerts.out_of_stock_products : []
   const carbonTypeMap = {}
-  emptyStock.forEach(p => {
+  stockAlerts.forEach(p => {
     const t = CARBON_LABELS[p.carbon_type] || p.carbon_type
     carbonTypeMap[t] = (carbonTypeMap[t] || 0) + 1
   })
@@ -243,9 +243,9 @@ export default function Dashboard() {
       </div>
 
       {/* Alert: Out of Stock Products */}
-      {emptyStock.length > 0 && (
+      {stockAlerts.length > 0 && (
         <div>
-          <SectionTitle>Produk Stok Kosong ({emptyStock.length})</SectionTitle>
+          <SectionTitle>Produk Stok Kosong ({stockAlerts.length})</SectionTitle>
           <div style={{
             background: 'var(--bg-surface)',
             border: '1px solid var(--border)',
@@ -273,11 +273,11 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {emptyStock.map((p, i) => (
+                {stockAlerts.map((p, i) => (
                   <tr
                     key={p.id}
                     style={{
-                      borderBottom: i < emptyStock.length - 1 ? '1px solid var(--border)' : 'none',
+                      borderBottom: i < stockAlerts.length - 1 ? '1px solid var(--border)' : 'none',
                       transition: 'background 0.1s',
                     }}
                     onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-elevated)'}
