@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Save } from 'lucide-react'
+import { ArrowLeft, Save, Upload, Trash2, ImageOff } from 'lucide-react'
 import api from '../api/axios'
 
 const CARBON_TYPES = ['twill', 'forged', 'plain']
@@ -57,6 +57,10 @@ export default function ProductForm() {
   const [fetchLoading, setFetchLoading] = useState(isEdit)
   const [errors, setErrors] = useState({})
   const [serverError, setServerError] = useState('')
+  const [photo, setPhoto] = useState(null)
+  const [previewUrl, setPreviewUrl] = useState(null)
+  const [removePhoto, setRemovePhoto] = useState(false)
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     if (!isEdit) return
@@ -73,9 +77,17 @@ export default function ProductForm() {
           online_price: p.online_price ?? '',
           min_stock: p.min_stock ?? 2,
         })
+        if (p.photo_url) setPreviewUrl(p.photo_url)
       })
       .catch(() => setServerError('Gagal memuat data produk'))
       .finally(() => setFetchLoading(false))
+
+    // Cleanup object URLs on unmount
+    return () => {
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl)
+      }
+    }
   }, [id, isEdit])
 
   const set = (key, val) => {
@@ -120,18 +132,36 @@ export default function ProductForm() {
     if (!validate()) return
     setLoading(true)
     setServerError('')
-    const payload = {
-      ...form,
-      modal_price: Number(form.modal_price),
-      reseller_price: Number(form.reseller_price),
-      online_price: form.online_price ? Number(form.online_price) : null,
-      min_stock: Number(form.min_stock),
+
+    const formData = new FormData()
+    formData.append('name', form.name.trim())
+    formData.append('sku', form.sku.trim())
+    formData.append('carbon_type', form.carbon_type)
+    formData.append('modal_price', Number(form.modal_price))
+    formData.append('reseller_price', Number(form.reseller_price))
+    if (form.online_price) formData.append('online_price', Number(form.online_price))
+
+    // Vespa compatibility array
+    form.vespa_compatibility.forEach(v => formData.append('vespa_compatibility[]', v))
+
+    // Photo
+    if (photo) {
+      formData.append('photo', photo)
     }
+    if (removePhoto) {
+      formData.append('remove_photo', '1')
+    }
+
     try {
       if (isEdit) {
-        await api.put(`/products/${id}`, payload)
+        formData.append('_method', 'PUT')
+        await api.post(`/products/${id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
       } else {
-        await api.post('/products', payload)
+        await api.post('/products', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
       }
       navigate('/products')
     } catch (err) {
@@ -335,6 +365,111 @@ export default function ProductForm() {
           </div>
           {errors.vespa_compatibility && <p style={{ marginTop: 4, fontSize: 11, color: 'var(--red)' }}>{errors.vespa_compatibility}</p>}
         </Field>
+
+        {/* Foto Produk */}
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20 }}>
+          <p style={{ fontSize: 12, fontFamily: 'Inter, sans-serif', fontWeight: 600, color: 'var(--text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 14 }}>
+            Foto Produk
+          </p>
+          <div style={{
+            border: '1px solid var(--border)', borderRadius: 8, padding: 16,
+            background: 'var(--bg-elevated)',
+          }}>
+            {/* Preview */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 12 }}>
+              {previewUrl ? (
+                <div style={{ position: 'relative', width: 100, height: 100, flexShrink: 0 }}>
+                  <img
+                    src={previewUrl}
+                    alt="Preview"
+                    style={{
+                      width: 100, height: 100, borderRadius: 8,
+                      objectFit: 'cover', border: '1px solid var(--border)',
+                    }}
+                  />
+                  {isEdit && !removePhoto && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPhoto(null)
+                        setRemovePhoto(true)
+                        setPreviewUrl(null)
+                      }}
+                      title="Hapus foto"
+                      style={{
+                        position: 'absolute', top: -6, right: -6, zIndex: 1,
+                        background: 'var(--red)', border: 'none', borderRadius: '50%',
+                        width: 22, height: 22, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: '#fff',
+                      }}
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div style={{
+                  width: 100, height: 100, borderRadius: 8,
+                  border: '1px dashed var(--border)',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  color: 'var(--text-muted)', gap: 4, flexShrink: 0,
+                }}>
+                  <ImageOff size={24} style={{ opacity: 0.4 }} />
+                  <span style={{ fontSize: 10, fontFamily: 'Inter, sans-serif' }}>Belum ada foto</span>
+                </div>
+              )}
+
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={e => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    setPhoto(file)
+                    setRemovePhoto(false)
+                    // Revoke old blob URL if any
+                    if (previewUrl && previewUrl.startsWith('blob:')) {
+                      URL.revokeObjectURL(previewUrl)
+                    }
+                    setPreviewUrl(URL.createObjectURL(file))
+                  }}
+                  style={{ display: 'none' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                    background: 'var(--accent-bg)', border: '1px solid rgba(200,169,110,0.2)',
+                    borderRadius: 8, padding: '8px 14px', cursor: 'pointer',
+                    color: 'var(--accent)', fontSize: 12, fontFamily: 'Inter, sans-serif', fontWeight: 500,
+                  }}
+                >
+                  <Upload size={14} />
+                  {previewUrl ? 'Ganti Foto' : 'Upload Foto'}
+                </button>
+                <p style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Inter, sans-serif' }}>
+                  JPG, PNG, atau WebP. Maks 2MB.
+                </p>
+              </div>
+            </div>
+
+            {/* Keterangan foto existing */}
+            {isEdit && previewUrl && !removePhoto && !photo && (
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Inter, sans-serif' }}>
+                Foto saat ini. Klik "Ganti Foto" untuk upload ulang.
+              </p>
+            )}
+            {removePhoto && (
+              <p style={{ fontSize: 11, color: 'var(--red)', fontFamily: 'Inter, sans-serif' }}>
+                Foto akan dihapus saat disimpan.
+              </p>
+            )}
+          </div>
+        </div>
 
         {/* Harga */}
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20 }}>

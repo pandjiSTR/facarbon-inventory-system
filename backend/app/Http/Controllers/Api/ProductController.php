@@ -122,6 +122,12 @@ class ProductController extends Controller
             $validated['photo'] = $request->file('photo')->store('products', 'public');
         }
 
+        // Hapus foto jika diminta
+        if ($request->input('remove_photo') && $product->photo) {
+            Storage::disk('public')->delete($product->photo);
+            $validated['photo'] = null;
+        }
+
         $product->update($validated);
 
         return response()->json([

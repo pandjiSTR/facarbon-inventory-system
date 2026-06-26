@@ -584,7 +584,7 @@ cloudflared tunnel --url http://localhost:8000
 
 ## 16. OpenCode Project Config — Agent & Skill (Juni 2026)
 
-Project-level OpenCode configuration di `.opencode/` folder root proyek. Di-load otomatis oleh OpenCode dan di-merge dengan global config.
+Project-level OpenCode configuration di `.opencode/` folder root proyek. Di-load otomatis oleh OpenCode dan di-merge dengan global config.    
 
 ### Struktur Folder
 ```
