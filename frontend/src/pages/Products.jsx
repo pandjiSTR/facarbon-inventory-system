@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight, AlertCircle, LayoutGrid, List } from 'lucide-react'
 import api from '../api/axios'
-import ImagePreview from '../components/ui/ImagePreview'
 import ProductCard from '../components/ui/ProductCard'
 import ProductDetailDrawer from '../components/ui/ProductDetailDrawer'
 
@@ -306,13 +305,13 @@ export default function Products() {
                     <td style={{ padding: '11px 14px', fontSize: 13, color: 'var(--text-primary)', fontWeight: 500, whiteSpace: 'nowrap' }}>
                       <span
                         onClick={() => setDetailProduct(p)}
+                        title="Klik untuk detail produk"
                         style={{ cursor: 'pointer', borderBottom: '1px dashed var(--border)', transition: 'color 0.15s' }}
                         onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
                         onMouseLeave={e => e.currentTarget.style.color = 'var(--text-primary)'}
                       >
                         {p.name}
                       </span>
-                      <ImagePreview src={p.photo_url} alt={p.name} productName={p.name} />
                     </td>
                     <td style={{ padding: '11px 14px' }}>
                       <Badge type={p.carbon_type} />
