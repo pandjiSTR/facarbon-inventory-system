@@ -75,7 +75,7 @@ export default function ImageTooltip({ src, alt, children, onClick }) {
             position: 'fixed',
             top: pos.top,
             left: pos.left,
-            zIndex: 999,
+            zIndex: 40,
             cursor: 'pointer',
             animation: 'fadeIn 0.12s ease-out',
           }}
@@ -125,7 +125,7 @@ export default function ImageTooltip({ src, alt, children, onClick }) {
             position: 'fixed',
             top: pos.top,
             left: pos.left,
-            zIndex: 999,
+            zIndex: 40,
             padding: '8px 12px',
             borderRadius: 6,
             background: 'var(--bg-elevated)',
