@@ -16,6 +16,8 @@
 
 # AI / Vibecoding
 .opencode/
+AGENTS.md
+context.md
 
 # General
 .DS_Store
