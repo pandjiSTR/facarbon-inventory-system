@@ -17,8 +17,8 @@ const fmt = (n) =>
     ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n)
     : '—'
 
-const CARBON_TYPES = ['semua', 'twill', 'forged', 'plain']
-const CARBON_LABELS = { twill: 'Twill', forged: 'Forged', plain: 'Plain' }
+const CARBON_TYPES = ['semua', 'twill', 'forged']
+const CARBON_LABELS = { twill: 'Twill', forged: 'Forged' }
 
 export default function Products() {
   const navigate = useNavigate()

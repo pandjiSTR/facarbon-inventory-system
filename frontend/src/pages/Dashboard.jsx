@@ -18,7 +18,7 @@ const fmt = (n) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 
 // Carbon type labels
-const CARBON_LABELS = { twill: 'Twill', forged: 'Forged', plain: 'Plain' }
+const CARBON_LABELS = { twill: 'Twill', forged: 'Forged' }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function SectionTitle({ children }) {

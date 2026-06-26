@@ -2003,7 +2003,6 @@ VITE_API_URL=http://127.0.0.1:8000/api
 | **`register` route error** | Route `/auth/register` ada di `api.php` tapi controller tidak punya method `register()`. Memanggil endpoint ini akan error. | Tidak mengganggu — register via UserController (admin-only) |
 | **`min_stock` tidak ada di DB** | Field `min_stock` tidak ada di migration/model, hanya di form ProductForm (nilai dikirim tapi diabaikan backend). | Low stock badge di Sidebar selalu 0 |
 | **Sidebar low stock badge** | `AppLayout` fetch `/products?low_stock=1` (filter backend tdk didukung) + filter `p.stock <= p.min_stock` (field `stock` tdk ada, harusnya `current_stock`). | Badge merah tidak pernah muncul |
-| **Carbon type `plain`** | Frontend ProductForm menawarkan `plain` sebagai option, backend validasi hanya menerima `forged`/`twill`. | Submit dengan `plain` akan 422 |
 | **Low stock 3 definisi konflik** | Dashboard: `current_stock > 0 && <= 3`. Context.md: `current_stock = 0`. Frontend: `stock <= min_stock`. | Tidak ada definisi yang konsisten |
 | **Route count mismatch** | resource.md & context.md bilang 42 endpoint. api.php punya 43 route (register ada route tapi tdk ada method). | Dokumentasi kurang presisi |
 | **Placeholder.jsx orphan** | `frontend/src/pages/Placeholder.jsx` ada di disk tapi tidak di-import/diroute di manapun. | File sampah — tidak mengganggu |

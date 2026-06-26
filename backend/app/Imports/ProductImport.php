@@ -64,8 +64,8 @@ class ProductImport implements ToCollection, WithHeadingRow
 
             if (empty($carbonType)) {
                 $errors[] = 'Carbon type wajib diisi';
-            } elseif (!in_array($carbonType, ['twill', 'forged', 'plain'])) {
-                $errors[] = 'Carbon type harus salah satu dari: twill, forged, plain';
+            } elseif (!in_array($carbonType, ['twill', 'forged'])) {
+                $errors[] = 'Carbon type harus salah satu dari: twill, forged';
             }
 
             if (empty($vespaCompatibility)) {

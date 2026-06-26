@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Save, Upload, Trash2, ImageOff } from 'lucide-react'
 import api from '../api/axios'
 
-const CARBON_TYPES = ['twill', 'forged', 'plain']
+const CARBON_TYPES = ['twill', 'forged']
 
 const VESPA_OPTIONS = [
   'Universal',

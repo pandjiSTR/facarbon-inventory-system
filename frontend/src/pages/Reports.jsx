@@ -12,8 +12,8 @@ const fmt = (n) =>
 
 const fmtDate = (d) => new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })
 
-const CARBON_LABELS = { twill: 'Twill', forged: 'Forged', plain: 'Plain' }
-const CARBON_COLORS = { twill: '#a0c4ff', forged: '#c8a96e', plain: '#b0b0b0' }
+const CARBON_LABELS = { twill: 'Twill', forged: 'Forged' }
+const CARBON_COLORS = { twill: '#a0c4ff', forged: '#c8a96e' }
 
 const today = () => new Date().toISOString().split('T')[0]
 const monthAgo = () => {

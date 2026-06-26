@@ -1,12 +1,11 @@
-const CARBON_LABELS = { twill: 'Twill', forged: 'Forged', plain: 'Plain' }
+const CARBON_LABELS = { twill: 'Twill', forged: 'Forged' }
 
 export default function Badge({ type }) {
   const styles = {
     twill:  { color: '#a0c4ff', bg: 'rgba(160,196,255,0.08)' },
     forged: { color: 'var(--accent)', bg: 'var(--accent-bg)' },
-    plain:  { color: '#b0b0b0', bg: 'rgba(176,176,176,0.08)' },
   }
-  const s = styles[type] || styles.plain
+  const s = styles[type] || styles.forged
   return (
     <span style={{
       fontSize: 11, fontFamily: 'Inter, sans-serif', fontWeight: 500,
