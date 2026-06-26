@@ -44,6 +44,12 @@ export default function ImageTooltip({ src, alt, children, onClick }) {
     setShow(false)
   }, [])
 
+  const handlePreviewClick = useCallback((e) => {
+    e.stopPropagation()
+    setShow(false)
+    onClick?.()
+  }, [onClick])
+
   useEffect(() => {
     return () => {
       clearTimeout(showTimer.current)
@@ -73,7 +79,7 @@ export default function ImageTooltip({ src, alt, children, onClick }) {
           }}
           onMouseEnter={handlePreviewEnter}
           onMouseLeave={handlePreviewLeave}
-          onClick={onClick}
+          onClick={handlePreviewClick}
         >
           {/* Gambar */}
           <div style={{
@@ -131,7 +137,7 @@ export default function ImageTooltip({ src, alt, children, onClick }) {
           }}
           onMouseEnter={handlePreviewEnter}
           onMouseLeave={handlePreviewLeave}
-          onClick={onClick}
+          onClick={handlePreviewClick}
         >
           Tidak ada gambar
         </div>
