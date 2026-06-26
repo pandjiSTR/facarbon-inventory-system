@@ -304,10 +304,9 @@ export default function Products() {
                       </span>
                     </td>
                     <td style={{ padding: '11px 14px', fontSize: 13, color: 'var(--text-primary)', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                      <ImageTooltip src={p.photo_url} alt={p.name}>
+                      <ImageTooltip src={p.photo_url} alt={p.name} onClick={() => setDetailProduct(p)}>
                         <span
                           onClick={() => setDetailProduct(p)}
-                          title="Klik untuk detail produk"
                           style={{ cursor: 'pointer', borderBottom: '1px dashed var(--border)', transition: 'color 0.15s' }}
                           onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
                           onMouseLeave={e => e.currentTarget.style.color = 'var(--text-primary)'}

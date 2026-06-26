@@ -1,13 +1,14 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 
-export default function ImageTooltip({ src, alt, children }) {
+export default function ImageTooltip({ src, alt, children, onClick }) {
   const [show, setShow] = useState(false)
   const [pos, setPos] = useState({ top: 0, left: 0 })
-  const timer = useRef(null)
+  const showTimer = useRef(null)
+  const hideTimer = useRef(null)
   const wrapperRef = useRef(null)
 
   const IMG_W = 180
-  const TEXT_W = 32
+  const TEXT_H = 32
   const GAP = 8
 
   const handleEnter = useCallback(() => {
@@ -19,22 +20,35 @@ export default function ImageTooltip({ src, alt, children }) {
     if (left + w > window.innerWidth - 8) {
       left = window.innerWidth - w - 8
     }
-    const h = src ? IMG_W + TEXT_W + 4 : 36
+    const h = src ? IMG_W + TEXT_H + 4 : 36
     let top = rect.top
     if (top + h > window.innerHeight - 8) {
       top = window.innerHeight - h - 8
     }
     setPos({ top, left })
-    timer.current = setTimeout(() => setShow(true), 250)
+    clearTimeout(hideTimer.current)
+    showTimer.current = setTimeout(() => setShow(true), 250)
   }, [src])
 
   const handleLeave = useCallback(() => {
-    clearTimeout(timer.current)
+    clearTimeout(showTimer.current)
+    // Grace period 200ms — kalau mouse masuk ke preview, hide di-cancel
+    hideTimer.current = setTimeout(() => setShow(false), 200)
+  }, [])
+
+  const handlePreviewEnter = useCallback(() => {
+    clearTimeout(hideTimer.current)
+  }, [])
+
+  const handlePreviewLeave = useCallback(() => {
     setShow(false)
   }, [])
 
   useEffect(() => {
-    return () => clearTimeout(timer.current)
+    return () => {
+      clearTimeout(showTimer.current)
+      clearTimeout(hideTimer.current)
+    }
   }, [])
 
   return (
@@ -48,13 +62,19 @@ export default function ImageTooltip({ src, alt, children }) {
 
       {/* Image preview */}
       {show && src && (
-        <div style={{
-          position: 'fixed',
-          top: pos.top,
-          left: pos.left,
-          zIndex: 999,
-          animation: 'fadeIn 0.12s ease-out',
-        }}>
+        <div
+          style={{
+            position: 'fixed',
+            top: pos.top,
+            left: pos.left,
+            zIndex: 999,
+            cursor: 'pointer',
+            animation: 'fadeIn 0.12s ease-out',
+          }}
+          onMouseEnter={handlePreviewEnter}
+          onMouseLeave={handlePreviewLeave}
+          onClick={onClick}
+        >
           {/* Gambar */}
           <div style={{
             width: IMG_W,
@@ -82,8 +102,8 @@ export default function ImageTooltip({ src, alt, children }) {
             textAlign: 'center',
             fontSize: 11,
             color: 'var(--text-secondary)',
-            pointerEvents: 'none',
             whiteSpace: 'nowrap',
+            pointerEvents: 'none',
           }}>
             klik untuk detail produk
           </div>
@@ -92,22 +112,27 @@ export default function ImageTooltip({ src, alt, children }) {
 
       {/* Text fallback — no image */}
       {show && !src && (
-        <div style={{
-          position: 'fixed',
-          top: pos.top,
-          left: pos.left,
-          zIndex: 999,
-          padding: '8px 12px',
-          borderRadius: 6,
-          background: 'var(--bg-elevated)',
-          border: '1px solid var(--border)',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-          fontSize: 12,
-          color: 'var(--text-secondary)',
-          pointerEvents: 'none',
-          whiteSpace: 'nowrap',
-          animation: 'fadeIn 0.12s ease-out',
-        }}>
+        <div
+          style={{
+            position: 'fixed',
+            top: pos.top,
+            left: pos.left,
+            zIndex: 999,
+            padding: '8px 12px',
+            borderRadius: 6,
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+            fontSize: 12,
+            color: 'var(--text-secondary)',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+            animation: 'fadeIn 0.12s ease-out',
+          }}
+          onMouseEnter={handlePreviewEnter}
+          onMouseLeave={handlePreviewLeave}
+          onClick={onClick}
+        >
           Tidak ada gambar
         </div>
       )}
