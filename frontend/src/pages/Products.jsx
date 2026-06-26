@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight, AlertCircle } from 'lucide-react'
+import { Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight, AlertCircle, LayoutGrid, List } from 'lucide-react'
 import api from '../api/axios'
+import ImagePreview from '../components/ui/ImagePreview'
+import ProductCard from '../components/ui/ProductCard'
 
 const fmt = (n) =>
   n != null
@@ -69,6 +71,7 @@ export default function Products() {
   const [filterStock, setFilterStock] = useState('semua') // semua | kosong | tersedia
   const [deleting, setDeleting] = useState(null)
   const [toggling, setToggling] = useState(null)
+  const [viewMode, setViewMode] = useState('list')
 
   const fetchProducts = () => {
     setLoading(true)
@@ -218,128 +221,189 @@ export default function Products() {
             </button>
           ))}
         </div>
+
+        {/* View mode toggle */}
+        <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
+          <button
+            onClick={() => setViewMode('list')}
+            title="Mode tabel"
+            style={{
+              padding: '6px 8px', borderRadius: 6, border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center',
+              background: viewMode === 'list' ? 'var(--accent)' : 'var(--bg-elevated)',
+              color: viewMode === 'list' ? '#0d0d0d' : 'var(--text-secondary)',
+              transition: 'all 0.15s',
+            }}
+          >
+            <List size={14} />
+          </button>
+          <button
+            onClick={() => setViewMode('catalog')}
+            title="Mode katalog"
+            style={{
+              padding: '6px 8px', borderRadius: 6, border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center',
+              background: viewMode === 'catalog' ? 'var(--accent)' : 'var(--bg-elevated)',
+              color: viewMode === 'catalog' ? '#0d0d0d' : 'var(--text-secondary)',
+              transition: 'all 0.15s',
+            }}
+          >
+            <LayoutGrid size={14} />
+          </button>
+        </div>
       </div>
 
-      {/* Table */}
-      <div style={{
-        background: 'var(--bg-surface)', border: '1px solid var(--border)',
-        borderRadius: 12, overflow: 'hidden',
-      }}>
-        {loading ? (
-          <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
-            Memuat produk...
-          </div>
-        ) : filtered.length === 0 ? (
-          <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
-            Tidak ada produk ditemukan
-          </div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-main)' }}>
-                {['SKU', 'Nama Produk', 'Carbon Type', 'Kompatibilitas', 'Harga Modal', 'Harga Reseller', 'Harga Online', 'Stok', 'Status', 'Aksi'].map(h => (
-                  <th key={h} style={{
-                    padding: '10px 14px', textAlign: 'left',
-                    fontSize: 11, fontFamily: 'Inter, sans-serif',
-                    fontWeight: 600, color: 'var(--text-muted)',
-                    letterSpacing: '0.05em', textTransform: 'uppercase',
-                    whiteSpace: 'nowrap',
-                  }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((p, i) => (
-                <tr
-                  key={p.id}
-                  style={{
-                    borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none',
-                    opacity: p.is_active ? 1 : 0.5,
-                    transition: 'background 0.1s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-elevated)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  <td style={{ padding: '11px 14px' }}>
-                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: 'var(--text-secondary)' }}>
-                      {p.sku}
-                    </span>
-                  </td>
-                  <td style={{ padding: '11px 14px', fontSize: 13, color: 'var(--text-primary)', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                    {p.name}
-                  </td>
-                  <td style={{ padding: '11px 14px' }}>
-                    <Badge type={p.carbon_type} />
-                  </td>
-                  <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, sans-serif' }}>
-                    {Array.isArray(p.vespa_compatibility) ? p.vespa_compatibility.join(", ") : p.vespa_compatibility}
-                  </td>
-                  <td style={{ padding: '11px 14px' }}>
-                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: 'var(--text-secondary)' }}>
-                      {fmt(p.modal_price)}
-                    </span>
-                  </td>
-                  <td style={{ padding: '11px 14px' }}>
-                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: 'var(--accent)' }}>
-                      {fmt(p.reseller_price)}
-                    </span>
-                  </td>
-                  <td style={{ padding: '11px 14px' }}>
-                    <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: 'var(--text-secondary)' }}>
-                      {fmt(p.online_price)}
-                    </span>
-                  </td>
-                  <td style={{ padding: '11px 14px' }}>
-                    <StockBadge stock={p.current_stock} />
-                  </td>
-                  <td style={{ padding: '11px 14px' }}>
-                    <button
-                      onClick={() => handleToggle(p.id)}
-                      disabled={toggling === p.id}
-                      title={p.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
-                    >
-                      {p.is_active
-                        ? <ToggleRight size={20} color="var(--green)" />
-                        : <ToggleLeft size={20} color="var(--text-muted)" />
-                      }
-                    </button>
-                  </td>
-                  <td style={{ padding: '11px 14px' }}>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <button
-                        onClick={() => navigate(`/products/${p.id}/edit`)}
-                        title="Edit"
-                        style={{
-                          background: 'rgba(200,169,110,0.08)', border: '1px solid rgba(200,169,110,0.15)',
-                          borderRadius: 6, padding: '5px 7px', cursor: 'pointer',
-                          display: 'flex', alignItems: 'center', color: 'var(--accent)',
-                        }}
-                      >
-                        <Edit2 size={12} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(p.id)}
-                        disabled={deleting === p.id}
-                        title="Hapus"
-                        style={{
-                          background: 'var(--red-bg)', border: '1px solid rgba(224,90,90,0.15)',
-                          borderRadius: 6, padding: '5px 7px', cursor: 'pointer',
-                          display: 'flex', alignItems: 'center', color: 'var(--red)',
-                        }}
-                      >
-                        <Trash2 size={12} />
-                      </button>
-                    </div>
-                  </td>
+      {/* Content: Table or Catalog */}
+      {viewMode === 'list' ? (
+        <div style={{
+          background: 'var(--bg-surface)', border: '1px solid var(--border)',
+          borderRadius: 12, overflow: 'hidden',
+        }}>
+          {loading ? (
+            <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
+              Memuat produk...
+            </div>
+          ) : filtered.length === 0 ? (
+            <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
+              Tidak ada produk ditemukan
+            </div>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-main)' }}>
+                  {['SKU', 'Nama Produk', 'Carbon Type', 'Kompatibilitas', 'Harga Reseller', 'Harga Online', 'Stok', 'Status', 'Aksi'].map(h => (
+                    <th key={h} style={{
+                      padding: '10px 14px', textAlign: 'left',
+                      fontSize: 11, fontFamily: 'Inter, sans-serif',
+                      fontWeight: 600, color: 'var(--text-muted)',
+                      letterSpacing: '0.05em', textTransform: 'uppercase',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
+              </thead>
+              <tbody>
+                {filtered.map((p, i) => (
+                  <tr
+                    key={p.id}
+                    style={{
+                      borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none',
+                      opacity: p.is_active ? 1 : 0.5,
+                      transition: 'background 0.1s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-elevated)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    <td style={{ padding: '11px 14px' }}>
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: 'var(--text-secondary)' }}>
+                        {p.sku}
+                      </span>
+                    </td>
+                    <td style={{ padding: '11px 14px', fontSize: 13, color: 'var(--text-primary)', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                      {p.name}
+                      <ImagePreview src={p.photo_url} alt={p.name} productName={p.name} />
+                    </td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <Badge type={p.carbon_type} />
+                    </td>
+                    <td style={{ padding: '11px 14px', fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, sans-serif' }}>
+                      {Array.isArray(p.vespa_compatibility) ? p.vespa_compatibility.join(", ") : p.vespa_compatibility}
+                    </td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: 'var(--accent)' }}>
+                        {fmt(p.reseller_price)}
+                      </span>
+                    </td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: 'var(--text-secondary)' }}>
+                        {fmt(p.online_price)}
+                      </span>
+                    </td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <StockBadge stock={p.current_stock} />
+                    </td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <button
+                        onClick={() => handleToggle(p.id)}
+                        disabled={toggling === p.id}
+                        title={p.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }}
+                      >
+                        {p.is_active
+                          ? <ToggleRight size={20} color="var(--green)" />
+                          : <ToggleLeft size={20} color="var(--text-muted)" />
+                        }
+                      </button>
+                    </td>
+                    <td style={{ padding: '11px 14px' }}>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button
+                          onClick={() => navigate(`/products/${p.id}/edit`)}
+                          title="Edit"
+                          style={{
+                            background: 'rgba(200,169,110,0.08)', border: '1px solid rgba(200,169,110,0.15)',
+                            borderRadius: 6, padding: '5px 7px', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', color: 'var(--accent)',
+                          }}
+                        >
+                          <Edit2 size={12} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(p.id)}
+                          disabled={deleting === p.id}
+                          title="Hapus"
+                          style={{
+                            background: 'var(--red-bg)', border: '1px solid rgba(224,90,90,0.15)',
+                            borderRadius: 6, padding: '5px 7px', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', color: 'var(--red)',
+                          }}
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      ) : (
+        <div style={{
+          background: 'var(--bg-surface)', border: '1px solid var(--border)',
+          borderRadius: 12, padding: 16,
+        }}>
+          {loading ? (
+            <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
+              Memuat produk...
+            </div>
+          ) : filtered.length === 0 ? (
+            <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
+              Tidak ada produk ditemukan
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+              gap: 14,
+            }}>
+              {filtered.map(p => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  onEdit={(id) => navigate(`/products/${id}/edit`)}
+                  onDelete={handleDelete}
+                  onToggle={handleToggle}
+                  toggling={toggling}
+                  deleting={deleting}
+                />
               ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Footer count */}
       {!loading && filtered.length > 0 && (
