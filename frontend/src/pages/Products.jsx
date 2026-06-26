@@ -1,10 +1,16 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight, AlertCircle, LayoutGrid, List } from 'lucide-react'
+import { Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight, LayoutGrid, List, Download } from 'lucide-react'
 import api from '../api/axios'
 import ProductCard from '../components/ui/ProductCard'
 import ProductDetailDrawer from '../components/ui/ProductDetailDrawer'
 import ImageTooltip from '../components/ui/ImageTooltip'
+import Badge from '../components/ui/Badge'
+import StockBadge from '../components/ui/StockBadge'
+import { TableSkeleton } from '../components/ui/LoadingSkeleton'
+import Pagination from '../components/ui/Pagination'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
+import exportCSV from '../utils/exportCSV'
 
 const fmt = (n) =>
   n != null
@@ -14,94 +20,65 @@ const fmt = (n) =>
 const CARBON_TYPES = ['semua', 'twill', 'forged', 'plain']
 const CARBON_LABELS = { twill: 'Twill', forged: 'Forged', plain: 'Plain' }
 
-function Badge({ type }) {
-  const styles = {
-    twill:  { color: '#a0c4ff', bg: 'rgba(160,196,255,0.08)' },
-    forged: { color: 'var(--accent)', bg: 'var(--accent-bg)' },
-    plain:  { color: '#b0b0b0', bg: 'rgba(176,176,176,0.08)' },
-  }
-  const s = styles[type] || styles.plain
-  return (
-    <span style={{
-      fontSize: 11, fontFamily: 'Inter, sans-serif', fontWeight: 500,
-      color: s.color, background: s.bg,
-      padding: '2px 8px', borderRadius: 4,
-    }}>
-      {CARBON_LABELS[type] || type}
-    </span>
-  )
-}
-
-function StockBadge({ stock }) {
-  if (stock === 0) return (
-    <span style={{
-      fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 600,
-      color: 'var(--red)', background: 'var(--red-bg)',
-      padding: '2px 8px', borderRadius: 4,
-      display: 'inline-flex', alignItems: 'center', gap: 4,
-    }}>
-      <AlertCircle size={10} /> KOSONG
-    </span>
-  )
-  if (stock <= 2) return (
-    <span style={{
-      fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 600,
-      color: '#e0a85a', background: 'rgba(224,168,90,0.08)',
-      padding: '2px 8px', borderRadius: 4,
-    }}>
-      {stock}
-    </span>
-  )
-  return (
-    <span style={{
-      fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 600,
-      color: 'var(--green)', background: 'var(--green-bg)',
-      padding: '2px 8px', borderRadius: 4,
-    }}>
-      {stock}
-    </span>
-  )
-}
-
 export default function Products() {
   const navigate = useNavigate()
   const [products, setProducts] = useState([])
+  const [meta, setMeta] = useState({})
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('semua')
-  const [filterStock, setFilterStock] = useState('semua') // semua | kosong | tersedia
+  const [filterStock, setFilterStock] = useState('semua')
+  const [page, setPage] = useState(1)
   const [deleting, setDeleting] = useState(null)
   const [toggling, setToggling] = useState(null)
   const [viewMode, setViewMode] = useState('list')
   const [detailProduct, setDetailProduct] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState({ isOpen: false, id: null })
 
-  const fetchProducts = () => {
-    setLoading(true)
-    api.get('/products')
-      .then(res => setProducts(res.data.data || []))
+  const buildParams = useCallback((pg, q, type, stock) => {
+    const params = { page: pg, per_page: 25 }
+    if (q) params.search = q
+    if (type && type !== 'semua') params.carbon_type = type
+    if (stock === 'kosong') params.out_of_stock = 1
+    if (stock === 'tersedia') params.is_active = 1
+    return params
+  }, [])
+
+  useEffect(() => {
+    const params = buildParams(page, search, filterType, filterStock)
+    api.get('/products', { params })
+      .then(res => {
+        setProducts(res.data.data || [])
+        setMeta(res.data.meta || {})
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
+  }, [page, search, filterType, filterStock, buildParams])
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value)
+    setPage(1)
+    setLoading(true)
   }
 
-  useEffect(() => { fetchProducts() }, [])
+  const handleTypeChange = (t) => {
+    setFilterType(t)
+    setPage(1)
+    setLoading(true)
+  }
 
-  const filtered = useMemo(() => {
-    return products.filter(p => {
-      const matchSearch =
-        p.name.toLowerCase().includes(search.toLowerCase()) ||
-        p.sku.toLowerCase().includes(search.toLowerCase()) ||
-        p.vespa_compatibility.toLowerCase().includes(search.toLowerCase())
-      const matchType = filterType === 'semua' || p.carbon_type === filterType
-      const matchStock =
-        filterStock === 'semua' ? true :
-        filterStock === 'kosong' ? p.current_stock === 0 :
-        p.current_stock > 0
-      return matchSearch && matchType && matchStock
-    })
-  }, [products, search, filterType, filterStock])
+  const handleStockChange = (s) => {
+    setFilterStock(s)
+    setPage(1)
+    setLoading(true)
+  }
+
+  const handlePageChange = (p) => {
+    setPage(p)
+    setLoading(true)
+  }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Hapus produk ini?')) return
     setDeleting(id)
     try {
       await api.delete(`/products/${id}`)
@@ -110,6 +87,7 @@ export default function Products() {
       alert('Gagal menghapus produk')
     } finally {
       setDeleting(null)
+      setConfirmDelete({ isOpen: false, id: null })
     }
   }
 
@@ -126,20 +104,17 @@ export default function Products() {
     }
   }
 
-  const outOfStock = products.filter(p => p.current_stock === 0).length
-
   return (
     <div style={{ maxWidth: 1100 }}>
-      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
           <h1 style={{ fontFamily: 'Inter, sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
             Produk
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
-            {products.length} produk total
-            {outOfStock > 0 && (
-              <span style={{ color: 'var(--red)', marginLeft: 8 }}>· {outOfStock} stok kosong</span>
+            {meta.total || 0} produk total
+            {meta.out_of_stock > 0 && (
+              <span style={{ color: 'var(--red)', marginLeft: 8 }}>· {meta.out_of_stock} stok kosong</span>
             )}
           </p>
         </div>
@@ -156,21 +131,34 @@ export default function Products() {
           <Plus size={14} />
           Tambah Produk
         </button>
+        <button
+          onClick={() => exportCSV('/products/export', 'products.csv')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8,
+            padding: '9px 16px', cursor: 'pointer',
+            color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif',
+            fontSize: 13, fontWeight: 500, marginLeft: 8,
+          }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+        >
+          <Download size={14} />
+          Export CSV
+        </button>
       </div>
 
-      {/* Filters */}
       <div style={{
         background: 'var(--bg-surface)', border: '1px solid var(--border)',
         borderRadius: 12, padding: '14px 16px',
         display: 'flex', gap: 12, alignItems: 'center',
         marginBottom: 16, flexWrap: 'wrap',
       }}>
-        {/* Search */}
         <div style={{ position: 'relative', flex: '1', minWidth: 200 }}>
           <Search size={13} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={handleSearchChange}
             placeholder="Cari nama, SKU, kompatibilitas..."
             style={{
               width: '100%', background: 'var(--bg-elevated)',
@@ -184,12 +172,11 @@ export default function Products() {
           />
         </div>
 
-        {/* Carbon type filter */}
         <div style={{ display: 'flex', gap: 4 }}>
           {CARBON_TYPES.map(t => (
             <button
               key={t}
-              onClick={() => setFilterType(t)}
+              onClick={() => handleTypeChange(t)}
               style={{
                 padding: '6px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
                 fontSize: 12, fontFamily: 'Inter, sans-serif', fontWeight: 500,
@@ -203,12 +190,11 @@ export default function Products() {
           ))}
         </div>
 
-        {/* Stock filter */}
         <div style={{ display: 'flex', gap: 4 }}>
           {[['semua', 'Semua Stok'], ['kosong', 'Kosong'], ['tersedia', 'Tersedia']].map(([val, label]) => (
             <button
               key={val}
-              onClick={() => setFilterStock(val)}
+              onClick={() => handleStockChange(val)}
               style={{
                 padding: '6px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
                 fontSize: 12, fontFamily: 'Inter, sans-serif', fontWeight: 500,
@@ -224,7 +210,6 @@ export default function Products() {
           ))}
         </div>
 
-        {/* View mode toggle */}
         <div style={{ display: 'flex', gap: 4, marginLeft: 'auto' }}>
           <button
             onClick={() => setViewMode('list')}
@@ -255,17 +240,14 @@ export default function Products() {
         </div>
       </div>
 
-      {/* Content: Table or Catalog */}
       {viewMode === 'list' ? (
         <div style={{
           background: 'var(--bg-surface)', border: '1px solid var(--border)',
           borderRadius: 12, overflow: 'hidden',
         }}>
           {loading ? (
-            <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
-              Memuat produk...
-            </div>
-          ) : filtered.length === 0 ? (
+            <TableSkeleton rows={5} columns={7} />
+          ) : products.length === 0 ? (
             <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
               Tidak ada produk ditemukan
             </div>
@@ -287,11 +269,11 @@ export default function Products() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((p, i) => (
+                {products.map((p, i) => (
                   <tr
                     key={p.id}
                     style={{
-                      borderBottom: i < filtered.length - 1 ? '1px solid var(--border)' : 'none',
+                      borderBottom: i < products.length - 1 ? '1px solid var(--border)' : 'none',
                       opacity: p.is_active ? 1 : 0.5,
                       transition: 'background 0.1s',
                     }}
@@ -361,7 +343,7 @@ export default function Products() {
                           <Edit2 size={12} />
                         </button>
                         <button
-                          onClick={() => handleDelete(p.id)}
+                          onClick={() => setConfirmDelete({ isOpen: true, id: p.id })}
                           disabled={deleting === p.id}
                           title="Hapus"
                           style={{
@@ -379,6 +361,7 @@ export default function Products() {
               </tbody>
             </table>
           )}
+          {!loading && <Pagination meta={meta} onPageChange={handlePageChange} />}
         </div>
       ) : (
         <div style={{
@@ -386,10 +369,15 @@ export default function Products() {
           borderRadius: 12, padding: 16,
         }}>
           {loading ? (
-            <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
-              Memuat produk...
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} style={{
+                  background: 'var(--bg-elevated)', borderRadius: 10,
+                  height: 200, animation: 'pulse 1.5s ease-in-out infinite',
+                }} />
+              ))}
             </div>
-          ) : filtered.length === 0 ? (
+          ) : products.length === 0 ? (
             <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
               Tidak ada produk ditemukan
             </div>
@@ -399,7 +387,7 @@ export default function Products() {
               gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
               gap: 14,
             }}>
-              {filtered.map(p => (
+              {products.map(p => (
                 <ProductCard
                   key={p.id}
                   product={p}
@@ -413,17 +401,17 @@ export default function Products() {
               ))}
             </div>
           )}
+          {!loading && products.length > 0 && <Pagination meta={meta} onPageChange={handlePageChange} />}
         </div>
       )}
 
-      {/* Footer count */}
-      {!loading && filtered.length > 0 && (
-        <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Inter, sans-serif', textAlign: 'right' }}>
-          Menampilkan {filtered.length} dari {products.length} produk
-        </div>
-      )}
-
-      {/* Product Detail Drawer */}
+      <ConfirmDialog
+        isOpen={confirmDelete.isOpen}
+        message="Apakah Anda yakin ingin menghapus produk ini? Produk hanya bisa dihapus jika stok kosong."
+        onConfirm={() => handleDelete(confirmDelete.id)}
+        onCancel={() => setConfirmDelete({ isOpen: false, id: null })}
+        loading={deleting === confirmDelete.id}
+      />
       <ProductDetailDrawer
         product={detailProduct}
         isOpen={!!detailProduct}

@@ -1,12 +1,12 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
-import { useTheme } from '../../context/ThemeContext'
+import { useAuth } from '../../context/useAuth'
+import { useTheme } from '../../context/useTheme'
 import logoDark from '../../assets/logo-facarbon-dark.png'
 import logoWhite from '../../assets/logo-facarbon-white.png'
 import {
   LayoutDashboard, Package, ArrowDownToLine, ArrowUpFromLine,
   DollarSign, FileText, History, BarChart3, Upload, LogOut,
-  AlertTriangle, Sun, Moon,
+  AlertTriangle, Sun, Moon, Users,
 } from 'lucide-react'
 
 const navItems = [
@@ -19,6 +19,7 @@ const navItems = [
   { to: '/transactions', label: 'Riwayat',      icon: History },
   { to: '/reports',      label: 'Laporan',      icon: BarChart3 },
   { to: '/import',       label: 'Import',       icon: Upload },
+  { to: '/users',        label: 'Pengguna',     icon: Users },
 ]
 
 export default function Sidebar({ lowStockCount = 0 }) {

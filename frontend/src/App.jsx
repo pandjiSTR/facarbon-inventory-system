@@ -1,25 +1,45 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
+import { ToastProvider } from './context/ToastContext'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import AppLayout from './components/layout/AppLayout'
-import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
-import Products from './pages/Products'
-import ProductForm from './pages/ProductForm'
-import StockIn from './pages/StockIn'
-import StockOut from './pages/StockOut'
-import Finances from './pages/Finances'
-import Invoices from './pages/Invoices'
-import Transactions from './pages/Transactions'
-import Reports from './pages/Reports'
-import Import from './pages/Import'
+import ErrorBoundary from './components/ui/ErrorBoundary'
+
+const Login = lazy(() => import('./pages/Login'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Products = lazy(() => import('./pages/Products'))
+const ProductForm = lazy(() => import('./pages/ProductForm'))
+const StockIn = lazy(() => import('./pages/StockIn'))
+const StockOut = lazy(() => import('./pages/StockOut'))
+const Finances = lazy(() => import('./pages/Finances'))
+const Invoices = lazy(() => import('./pages/Invoices'))
+const Transactions = lazy(() => import('./pages/Transactions'))
+const Reports = lazy(() => import('./pages/Reports'))
+const Import = lazy(() => import('./pages/Import'))
+const Users = lazy(() => import('./pages/Users'))
+
+function PageLoading() {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      minHeight: '60vh', color: 'var(--text-muted)', fontSize: 13,
+      fontFamily: 'Inter, sans-serif',
+    }}>
+      Memuat...
+    </div>
+  )
+}
 
 function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
+          <ToastProvider>
+          <ErrorBoundary>
+          <Suspense fallback={<PageLoading />}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
@@ -35,9 +55,13 @@ function App() {
               <Route path="transactions"      element={<Transactions />} />
               <Route path="reports"           element={<Reports />} />
               <Route path="import"            element={<Import />} />
+              <Route path="users"            element={<Users />} />
             </Route>
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
+          </Suspense>
+          </ErrorBoundary>
+          </ToastProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

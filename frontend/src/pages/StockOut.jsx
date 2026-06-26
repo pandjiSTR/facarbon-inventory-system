@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Trash2, TrendingDown } from 'lucide-react'
+import { Trash2, TrendingDown, Download } from 'lucide-react'
 import api from '../api/axios'
+import { TableSkeleton } from '../components/ui/LoadingSkeleton'
+import Pagination from '../components/ui/Pagination'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
+import exportCSV from '../utils/exportCSV'
 
 const fmt = (n) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
@@ -59,7 +63,9 @@ export default function StockOut() {
   const [deleting, setDeleting] = useState(null)
   const [errors, setErrors] = useState({})
   const [serverError, setServerError] = useState('')
+  const [page, setPage] = useState(1)
   const [success, setSuccess] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState({ isOpen: false, id: null })
 
   const [form, setForm] = useState({
     product_id: '',
@@ -70,8 +76,8 @@ export default function StockOut() {
     notes: '',
   })
 
-  const fetchRecords = () => {
-    api.get('/stock-out')
+  const fetchRecords = (pg) => {
+    api.get('/stock-out', { params: { page: pg ?? page } })
       .then(res => {
         setRecords(res.data.data || [])
         setMeta(res.data.meta || {})
@@ -80,10 +86,16 @@ export default function StockOut() {
       .finally(() => setLoading(false))
   }
 
+  const handlePageChange = (p) => {
+    setPage(p)
+    setLoading(true)
+    fetchRecords(p)
+  }
+
   useEffect(() => {
     api.get('/products').then(res => setProducts(res.data.data || [])).catch(() => {})
     fetchRecords()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-fill sell_price berdasarkan channel yang dipilih
   const updateSellPrice = (productId, channel) => {
@@ -145,7 +157,6 @@ export default function StockOut() {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Hapus catatan stok keluar ini? Stok produk akan dikembalikan.')) return
     setDeleting(id)
     try {
       await api.delete(`/stock-out/${id}`)
@@ -154,6 +165,7 @@ export default function StockOut() {
       alert('Gagal menghapus')
     } finally {
       setDeleting(null)
+      setConfirmDelete({ isOpen: false, id: null })
     }
   }
 
@@ -165,13 +177,30 @@ export default function StockOut() {
   return (
     <div style={{ maxWidth: 1100 }}>
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontFamily: 'Inter, sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
-          Stok Keluar
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
-          Catat penjualan produk via reseller, online, atau langsung
-        </p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div>
+          <h1 style={{ fontFamily: 'Inter, sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
+            Stok Keluar
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+            Catat penjualan produk via reseller, online, atau langsung
+          </p>
+        </div>
+        <button
+          onClick={() => exportCSV('/stock-out/export', 'stock-out.csv')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8,
+            padding: '9px 16px', cursor: 'pointer',
+            color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif',
+            fontSize: 13, fontWeight: 500,
+          }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+        >
+          <Download size={14} />
+          Export CSV
+        </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 20, alignItems: 'start' }}>
@@ -354,9 +383,7 @@ export default function StockOut() {
             </div>
 
             {loading ? (
-              <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
-                Memuat data...
-              </div>
+              <TableSkeleton rows={4} columns={6} />
             ) : records.length === 0 ? (
               <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
                 Belum ada catatan stok keluar
@@ -415,7 +442,7 @@ export default function StockOut() {
                       </td>
                       <td style={{ padding: '10px 14px' }}>
                         <button
-                          onClick={() => handleDelete(r.id)}
+                          onClick={() => setConfirmDelete({ isOpen: true, id: r.id })}
                           disabled={deleting === r.id}
                           style={{
                             background: 'var(--red-bg)', border: '1px solid rgba(224,90,90,0.15)',
@@ -434,6 +461,15 @@ export default function StockOut() {
           </div>
         </div>
       </div>
+      {!loading && <Pagination meta={meta} onPageChange={handlePageChange} />}
+      <ConfirmDialog
+        isOpen={confirmDelete.isOpen}
+        title="Hapus Stok Keluar"
+        message="Hapus catatan stok keluar ini? Stok produk akan dikembalikan."
+        onConfirm={() => handleDelete(confirmDelete.id)}
+        onCancel={() => setConfirmDelete({ isOpen: false, id: null })}
+        loading={deleting === confirmDelete.id}
+      />
     </div>
   )
 }

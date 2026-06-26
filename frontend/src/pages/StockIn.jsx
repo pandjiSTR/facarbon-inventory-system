@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, PackageCheck } from 'lucide-react'
+import { Plus, Trash2, PackageCheck, Download } from 'lucide-react'
 import api from '../api/axios'
+import { TableSkeleton } from '../components/ui/LoadingSkeleton'
+import Pagination from '../components/ui/Pagination'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
+import exportCSV from '../utils/exportCSV'
 
 const fmt = (n) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
@@ -44,7 +48,9 @@ export default function StockIn() {
   const [deleting, setDeleting] = useState(null)
   const [errors, setErrors] = useState({})
   const [serverError, setServerError] = useState('')
+  const [page, setPage] = useState(1)
   const [success, setSuccess] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState({ isOpen: false, id: null })
 
   const [form, setForm] = useState({
     product_id: '',
@@ -55,8 +61,8 @@ export default function StockIn() {
     notes: '',
   })
 
-  const fetchRecords = () => {
-    api.get('/stock-in')
+  const fetchRecords = (pg) => {
+    api.get('/stock-in', { params: { page: pg ?? page } })
       .then(res => {
         setRecords(res.data.data || [])
         setMeta(res.data.meta || {})
@@ -65,10 +71,16 @@ export default function StockIn() {
       .finally(() => setLoading(false))
   }
 
+  const handlePageChange = (p) => {
+    setPage(p)
+    setLoading(true)
+    fetchRecords(p)
+  }
+
   useEffect(() => {
     api.get('/products').then(res => setProducts(res.data.data || [])).catch(() => {})
     fetchRecords()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-fill modal_price saat pilih produk
   const handleProductChange = (id) => {
@@ -117,7 +129,6 @@ export default function StockIn() {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Hapus catatan stok masuk ini? Stok produk akan dikurangi kembali.')) return
     setDeleting(id)
     try {
       await api.delete(`/stock-in/${id}`)
@@ -126,6 +137,7 @@ export default function StockIn() {
       alert('Gagal menghapus')
     } finally {
       setDeleting(null)
+      setConfirmDelete({ isOpen: false, id: null })
     }
   }
 
@@ -133,15 +145,33 @@ export default function StockIn() {
   const totalValue = (Number(form.quantity) || 0) * (Number(form.modal_price) || 0)
 
   return (
+    <div>
     <div style={{ maxWidth: 1100 }}>
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontFamily: 'Inter, sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
-          Stok Masuk
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
-          Catat pembelian atau produksi stok baru
-        </p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div>
+          <h1 style={{ fontFamily: 'Inter, sans-serif', fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
+            Stok Masuk
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+            Catat pembelian atau produksi stok baru
+          </p>
+        </div>
+        <button
+          onClick={() => exportCSV('/stock-in/export', 'stock-in.csv')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8,
+            padding: '9px 16px', cursor: 'pointer',
+            color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif',
+            fontSize: 13, fontWeight: 500,
+          }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+        >
+          <Download size={14} />
+          Export CSV
+        </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 20, alignItems: 'start' }}>
@@ -301,9 +331,7 @@ export default function StockIn() {
             </div>
 
             {loading ? (
-              <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
-                Memuat data...
-              </div>
+              <TableSkeleton rows={4} columns={6} />
             ) : records.length === 0 ? (
               <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
                 Belum ada catatan stok masuk
@@ -369,7 +397,7 @@ export default function StockIn() {
                       </td>
                       <td style={{ padding: '10px 14px' }}>
                         <button
-                          onClick={() => handleDelete(r.id)}
+                          onClick={() => setConfirmDelete({ isOpen: true, id: r.id })}
                           disabled={deleting === r.id}
                           style={{
                             background: 'var(--red-bg)', border: '1px solid rgba(224,90,90,0.15)',
@@ -385,9 +413,19 @@ export default function StockIn() {
                 </tbody>
               </table>
             )}
+            {!loading && <Pagination meta={meta} onPageChange={handlePageChange} />}
+            </div>
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        isOpen={confirmDelete.isOpen}
+        title="Hapus Stok Masuk"
+        message="Hapus catatan stok masuk ini? Stok produk akan dikurangi kembali."
+        onConfirm={() => handleDelete(confirmDelete.id)}
+        onCancel={() => setConfirmDelete({ isOpen: false, id: null })}
+        loading={deleting === confirmDelete.id}
+      />
     </div>
   )
 }

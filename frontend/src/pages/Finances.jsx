@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Plus, TrendingUp, TrendingDown, Wallet } from 'lucide-react'
+import { Plus, TrendingUp, TrendingDown, Wallet, Download } from 'lucide-react'
 import api from '../api/axios'
+import { TableSkeleton } from '../components/ui/LoadingSkeleton'
+import Pagination from '../components/ui/Pagination'
+import exportCSV from '../utils/exportCSV'
 
 const fmt = (n) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
@@ -54,6 +57,7 @@ export default function Finances() {
   const [errors, setErrors] = useState({})
   const [serverError, setServerError] = useState('')
   const [success, setSuccess] = useState('')
+  const [page, setPage] = useState(1)
   const [filterType, setFilterType] = useState('')
   const [filterCat, setFilterCat] = useState('')
 
@@ -66,8 +70,8 @@ export default function Finances() {
     notes: '',
   })
 
-  const fetchRecords = (type = filterType, cat = filterCat) => {
-    const params = {}
+  const fetchRecords = (type, cat, pg) => {
+    const params = { page: pg ?? page }
     if (type) params.type = type
     if (cat) params.category = cat
     api.get('/finances', { params })
@@ -79,7 +83,7 @@ export default function Finances() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetchRecords() }, [])
+  useEffect(() => { fetchRecords() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (key, val) => {
     setForm(f => ({ ...f, [key]: val }))
@@ -119,8 +123,15 @@ export default function Finances() {
   const handleFilter = (type, cat) => {
     setFilterType(type)
     setFilterCat(cat)
+    setPage(1)
     setLoading(true)
-    fetchRecords(type, cat)
+    fetchRecords(type ?? '', cat ?? '', 1)
+  }
+
+  const handlePageChange = (p) => {
+    setPage(p)
+    setLoading(true)
+    fetchRecords(filterType, filterCat, p)
   }
 
   return (
@@ -147,6 +158,21 @@ export default function Finances() {
         >
           <Plus size={14} />
           Tambah Manual
+        </button>
+        <button
+          onClick={() => exportCSV('/finances/export', 'finances.csv')}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8,
+            padding: '9px 16px', cursor: 'pointer',
+            color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif',
+            fontSize: 13, fontWeight: 500, marginLeft: 8,
+          }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+        >
+          <Download size={14} />
+          Export CSV
         </button>
       </div>
 
@@ -274,7 +300,7 @@ export default function Finances() {
         {[['', 'Semua Tipe'], ['kredit', 'Kredit'], ['debit', 'Debit']].map(([val, label]) => (
           <button key={val} onClick={() => handleFilter(val, filterCat)}
             style={{
-              padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer',
+              padding: '6px 14px', borderRadius: 6, cursor: 'pointer',
               fontSize: 12, fontFamily: 'Inter, sans-serif', fontWeight: 500,
               background: filterType === val ? 'var(--accent)' : 'var(--bg-surface)',
               color: filterType === val ? '#0d0d0d' : 'var(--text-secondary)',
@@ -287,7 +313,7 @@ export default function Finances() {
         {[['', 'Semua Kategori'], ...CATEGORIES.map(c => [c.value, c.label])].map(([val, label]) => (
           <button key={val} onClick={() => handleFilter(filterType, val)}
             style={{
-              padding: '6px 14px', borderRadius: 6, border: 'none', cursor: 'pointer',
+              padding: '6px 14px', borderRadius: 6, cursor: 'pointer',
               fontSize: 12, fontFamily: 'Inter, sans-serif', fontWeight: 500,
               background: filterCat === val ? 'var(--accent-bg)' : 'var(--bg-surface)',
               color: filterCat === val ? 'var(--accent)' : 'var(--text-secondary)',
@@ -301,7 +327,7 @@ export default function Finances() {
       {/* Table */}
       <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>Memuat data...</div>
+          <TableSkeleton rows={4} columns={6} />
         ) : records.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>Belum ada catatan keuangan</div>
         ) : (
@@ -367,11 +393,7 @@ export default function Finances() {
         )}
       </div>
 
-      {!loading && records.length > 0 && (
-        <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-muted)', fontFamily: 'Inter, sans-serif', textAlign: 'right' }}>
-          {records.length} catatan
-        </div>
-      )}
+      {!loading && <Pagination meta={meta} onPageChange={handlePageChange} />}
     </div>
   )
 }

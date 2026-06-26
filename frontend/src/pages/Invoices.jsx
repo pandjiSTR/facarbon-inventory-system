@@ -1,7 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useReactToPrint } from 'react-to-print'
-import { Plus, Trash2, Printer, X, FileText, ChevronDown } from 'lucide-react'
+import { Plus, Trash2, Printer, X, FileText } from 'lucide-react'
 import api from '../api/axios'
+import { TableSkeleton } from '../components/ui/LoadingSkeleton'
+import Pagination from '../components/ui/Pagination'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 
 const fmt = (n) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
@@ -153,6 +156,7 @@ export default function Invoices() {
   const [deleting, setDeleting] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [previewInvoice, setPreviewInvoice] = useState(null)
+  const [page, setPage] = useState(1)
   const [serverError, setServerError] = useState('')
   const [errors, setErrors] = useState({})
 
@@ -166,9 +170,10 @@ export default function Invoices() {
 
   const printRef = useRef()
   const handlePrint = useReactToPrint({ contentRef: printRef })
+  const [confirmDelete, setConfirmDelete] = useState({ isOpen: false, id: null })
 
-  const fetchInvoices = () => {
-    api.get('/invoices')
+  const fetchInvoices = (pg) => {
+    api.get('/invoices', { params: { page: pg ?? page } })
       .then(res => {
         setInvoices(res.data.data || [])
         setMeta(res.data.meta || {})
@@ -177,10 +182,16 @@ export default function Invoices() {
       .finally(() => setLoading(false))
   }
 
+  const handlePageChange = (p) => {
+    setPage(p)
+    setLoading(true)
+    fetchInvoices(p)
+  }
+
   useEffect(() => {
     api.get('/products').then(res => setProducts(res.data.data || [])).catch(() => {})
     fetchInvoices()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const addItem = () => setItems(prev => [...prev, { product_id: '', quantity: 1, unit_price: '', channel: 'reseller' }])
   const removeItem = (idx) => setItems(prev => prev.filter((_, i) => i !== idx))
@@ -249,7 +260,6 @@ export default function Invoices() {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Hapus invoice ini? Stok yang sudah terjual akan dikembalikan.')) return
     setDeleting(id)
     try {
       await api.delete(`/invoices/${id}`)
@@ -258,6 +268,7 @@ export default function Invoices() {
       alert('Gagal menghapus invoice')
     } finally {
       setDeleting(null)
+      setConfirmDelete({ isOpen: false, id: null })
     }
   }
 
@@ -357,7 +368,6 @@ export default function Invoices() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {items.map((item, idx) => {
-                const p = products.find(p => p.id === Number(item.product_id))
                 const subtotal = (Number(item.quantity) || 0) * (Number(item.unit_price) || 0)
                 return (
                   <div key={idx} style={{
@@ -446,7 +456,7 @@ export default function Invoices() {
       {/* Table */}
       <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>Memuat data...</div>
+          <TableSkeleton rows={4} columns={7} />
         ) : invoices.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>Belum ada faktur dibuat</div>
         ) : (
@@ -491,7 +501,7 @@ export default function Invoices() {
                     <StatusBadge status={inv.status} />
                   </td>
                   <td style={{ padding: '10px 14px' }} onClick={e => e.stopPropagation()}>
-                    <button onClick={() => handleDelete(inv.id)} disabled={deleting === inv.id}
+                    <button                           onClick={() => setConfirmDelete({ isOpen: true, id: inv.id })} disabled={deleting === inv.id}
                       style={{
                         background: 'var(--red-bg)', border: '1px solid rgba(224,90,90,0.15)', borderRadius: 6,
                         padding: '5px 7px', cursor: 'pointer', display: 'flex', alignItems: 'center', color: 'var(--red)',
@@ -505,6 +515,8 @@ export default function Invoices() {
           </table>
         )}
       </div>
+
+      {!loading && <Pagination meta={meta} onPageChange={handlePageChange} />}
 
       {/* Preview Modal */}
       {previewInvoice && (
@@ -547,6 +559,14 @@ export default function Invoices() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        isOpen={confirmDelete.isOpen}
+        title="Hapus Invoice"
+        message="Hapus invoice ini? Stok yang sudah terjual akan dikembalikan."
+        onConfirm={() => handleDelete(confirmDelete.id)}
+        onCancel={() => setConfirmDelete({ isOpen: false, id: null })}
+        loading={deleting === confirmDelete.id}
+      />
     </div>
   )
 }
