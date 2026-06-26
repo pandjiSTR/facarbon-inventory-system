@@ -4,6 +4,7 @@ import { Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight, AlertCircle, Layo
 import api from '../api/axios'
 import ImagePreview from '../components/ui/ImagePreview'
 import ProductCard from '../components/ui/ProductCard'
+import ProductDetailDrawer from '../components/ui/ProductDetailDrawer'
 
 const fmt = (n) =>
   n != null
@@ -72,6 +73,7 @@ export default function Products() {
   const [deleting, setDeleting] = useState(null)
   const [toggling, setToggling] = useState(null)
   const [viewMode, setViewMode] = useState('list')
+  const [detailProduct, setDetailProduct] = useState(null)
 
   const fetchProducts = () => {
     setLoading(true)
@@ -302,7 +304,14 @@ export default function Products() {
                       </span>
                     </td>
                     <td style={{ padding: '11px 14px', fontSize: 13, color: 'var(--text-primary)', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                      {p.name}
+                      <span
+                        onClick={() => setDetailProduct(p)}
+                        style={{ cursor: 'pointer', borderBottom: '1px dashed var(--border)', transition: 'color 0.15s' }}
+                        onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
+                        onMouseLeave={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                      >
+                        {p.name}
+                      </span>
                       <ImagePreview src={p.photo_url} alt={p.name} productName={p.name} />
                     </td>
                     <td style={{ padding: '11px 14px' }}>
@@ -396,6 +405,7 @@ export default function Products() {
                   onEdit={(id) => navigate(`/products/${id}/edit`)}
                   onDelete={handleDelete}
                   onToggle={handleToggle}
+                  onShowDetail={setDetailProduct}
                   toggling={toggling}
                   deleting={deleting}
                 />
@@ -411,6 +421,14 @@ export default function Products() {
           Menampilkan {filtered.length} dari {products.length} produk
         </div>
       )}
+
+      {/* Product Detail Drawer */}
+      <ProductDetailDrawer
+        product={detailProduct}
+        isOpen={!!detailProduct}
+        onClose={() => setDetailProduct(null)}
+        onEdit={(id) => navigate(`/products/${id}/edit`)}
+      />
     </div>
   )
 }

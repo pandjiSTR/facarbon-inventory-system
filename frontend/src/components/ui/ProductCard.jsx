@@ -58,7 +58,7 @@ function StockBadge({ stock }) {
   )
 }
 
-export default function ProductCard({ product, onEdit, onDelete, onToggle, toggling, deleting }) {
+export default function ProductCard({ product, onEdit, onDelete, onToggle, onShowDetail, toggling, deleting }) {
   const [modalOpen, setModalOpen] = useState(false)
   const p = product
 
@@ -115,11 +115,17 @@ export default function ProductCard({ product, onEdit, onDelete, onToggle, toggl
         {/* Info area */}
         <div style={{ padding: '12px 14px 14px' }}>
           {/* Name */}
-          <h3 style={{
-            fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 600,
-            color: 'var(--text-primary)', margin: 0,
-            marginBottom: 2, lineHeight: 1.3,
-          }}>
+          <h3
+            onClick={() => onShowDetail?.(p)}
+            style={{
+              fontFamily: 'Inter, sans-serif', fontSize: 14, fontWeight: 600,
+              color: 'var(--text-primary)', margin: 0,
+              marginBottom: 2, lineHeight: 1.3,
+              cursor: 'pointer',
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-primary)'}
+          >
             {p.name}
           </h3>
 
