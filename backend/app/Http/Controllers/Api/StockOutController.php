@@ -8,6 +8,7 @@ use App\Models\StockOut;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class StockOutController extends Controller
 {
@@ -31,14 +32,18 @@ class StockOutController extends Controller
             $query->whereDate('date', '<=', $request->date_to);
         }
 
-        $stockOuts = $query->orderByDesc('date')->orderByDesc('id')->get();
+        $perPage = min((int) $request->get('per_page', 25), 100);
+        $stockOuts = $query->orderByDesc('date')->orderByDesc('id')->paginate($perPage);
 
         return response()->json([
             'success' => true,
-            'data'    => $stockOuts,
+            'data'    => $stockOuts->items(),
             'meta'    => [
-                'total_quantity' => $stockOuts->sum('quantity'),
-                'total_revenue'  => $stockOuts->sum(fn($s) => $s->quantity * $s->sell_price),
+                'total_quantity' => collect($stockOuts->items())->sum('quantity'),
+                'total_revenue'  => collect($stockOuts->items())->sum(fn($s) => $s->quantity * $s->sell_price),
+                'per_page'       => $stockOuts->perPage(),
+                'current_page'   => $stockOuts->currentPage(),
+                'last_page'      => $stockOuts->lastPage(),
             ],
         ]);
     }
@@ -93,6 +98,8 @@ class StockOutController extends Controller
 
             DB::commit();
 
+            $this->forgetDashboardCache($validated['date']);
+
             // Notifikasi stok kosong
             $product->refresh();
             $message = 'Stok keluar berhasil dicatat.';
@@ -128,6 +135,40 @@ class StockOutController extends Controller
     }
 
     /**
+     * GET /api/stock-out/export
+     */
+    public function export(): StreamedResponse
+    {
+        $records = StockOut::with('product:id,sku,name')->orderByDesc('date')->get();
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="stock-out.csv"',
+        ];
+
+        $callback = function () use ($records) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Tanggal', 'Produk', 'SKU', 'Channel', 'Qty', 'Harga Jual', 'Total', 'Catatan']);
+
+            foreach ($records as $r) {
+                fputcsv($handle, [
+                    $r->date,
+                    $r->product?->name ?? '-',
+                    $r->product?->sku ?? '-',
+                    $r->channel,
+                    $r->quantity,
+                    $r->sell_price,
+                    $r->quantity * $r->sell_price,
+                    $r->notes ?? '',
+                ]);
+            }
+            fclose($handle);
+        };
+
+        return new StreamedResponse($callback, 200, $headers);
+    }
+
+    /**
      * DELETE /api/stock-out/{id}
      */
     public function destroy(StockOut $stockOut): JsonResponse
@@ -141,6 +182,8 @@ class StockOutController extends Controller
             $product->recalculateStock();
 
             DB::commit();
+
+            $this->forgetDashboardCache($stockOut->date);
 
             return response()->json([
                 'success' => true,

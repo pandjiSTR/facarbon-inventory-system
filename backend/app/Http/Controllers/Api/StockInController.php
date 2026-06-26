@@ -8,6 +8,7 @@ use App\Models\StockIn;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class StockInController extends Controller
 {
@@ -31,14 +32,18 @@ class StockInController extends Controller
             $query->whereDate('date', '<=', $request->date_to);
         }
 
-        $stockIns = $query->orderByDesc('date')->orderByDesc('id')->get();
+        $perPage = min((int) $request->get('per_page', 25), 100);
+        $stockIns = $query->orderByDesc('date')->orderByDesc('id')->paginate($perPage);
 
         return response()->json([
             'success' => true,
-            'data'    => $stockIns,
+            'data'    => $stockIns->items(),
             'meta'    => [
-                'total_quantity' => $stockIns->sum('quantity'),
-                'total_modal'    => $stockIns->sum(fn($s) => $s->quantity * $s->modal_price),
+                'total_quantity' => collect($stockIns->items())->sum('quantity'),
+                'total_modal'    => collect($stockIns->items())->sum(fn($s) => $s->quantity * $s->modal_price),
+                'per_page'       => $stockIns->perPage(),
+                'current_page'   => $stockIns->currentPage(),
+                'last_page'      => $stockIns->lastPage(),
             ],
         ]);
     }
@@ -83,6 +88,8 @@ class StockInController extends Controller
 
             DB::commit();
 
+            $this->forgetDashboardCache($validated['date']);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Stok masuk berhasil dicatat.',
@@ -110,6 +117,40 @@ class StockInController extends Controller
     }
 
     /**
+     * GET /api/stock-in/export
+     */
+    public function export(): StreamedResponse
+    {
+        $records = StockIn::with('product:id,sku,name')->orderByDesc('date')->get();
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="stock-in.csv"',
+        ];
+
+        $callback = function () use ($records) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Tanggal', 'Produk', 'SKU', 'Kategori', 'Qty', 'Harga Modal', 'Total', 'Catatan']);
+
+            foreach ($records as $r) {
+                fputcsv($handle, [
+                    $r->date,
+                    $r->product?->name ?? '-',
+                    $r->product?->sku ?? '-',
+                    $r->category === 'pembelian_stok' ? 'Pembelian' : 'Produksi',
+                    $r->quantity,
+                    $r->modal_price,
+                    $r->quantity * $r->modal_price,
+                    $r->notes ?? '',
+                ]);
+            }
+            fclose($handle);
+        };
+
+        return new StreamedResponse($callback, 200, $headers);
+    }
+
+    /**
      * DELETE /api/stock-in/{id}
      */
     public function destroy(StockIn $stockIn): JsonResponse
@@ -128,6 +169,8 @@ class StockInController extends Controller
             $product->recalculateStock();
 
             DB::commit();
+
+            $this->forgetDashboardCache($stockIn->date);
 
             return response()->json([
                 'success' => true,

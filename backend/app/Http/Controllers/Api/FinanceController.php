@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Finance;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FinanceController extends Controller
 {
@@ -29,18 +30,23 @@ class FinanceController extends Controller
             $query->whereDate('date', '<=', $request->date_to);
         }
 
-        $finances = $query->orderByDesc('date')->orderByDesc('id')->get();
+        $perPage = min((int) $request->get('per_page', 25), 100);
+        $finances = $query->orderByDesc('date')->orderByDesc('id')->paginate($perPage);
 
-        $totalKredit = $finances->where('type', 'kredit')->sum('amount');
-        $totalDebit  = $finances->where('type', 'debit')->sum('amount');
+        $items = $finances->items();
+        $totalKredit = collect($items)->where('type', 'kredit')->sum('amount');
+        $totalDebit  = collect($items)->where('type', 'debit')->sum('amount');
 
         return response()->json([
             'success' => true,
-            'data'    => $finances,
+            'data'    => $items,
             'meta'    => [
                 'total_kredit' => $totalKredit,
                 'total_debit'  => $totalDebit,
                 'saldo'        => $totalKredit - $totalDebit,
+                'per_page'     => $finances->perPage(),
+                'current_page' => $finances->currentPage(),
+                'last_page'    => $finances->lastPage(),
             ],
         ]);
     }
@@ -75,6 +81,8 @@ class FinanceController extends Controller
             'user_id' => $request->user()->id,
         ]);
 
+        $this->forgetDashboardCache($validated['date']);
+
         return response()->json([
             'success' => true,
             'message' => 'Catatan keuangan berhasil ditambahkan.',
@@ -83,8 +91,42 @@ class FinanceController extends Controller
     }
 
     /**
+     * GET /api/finances/export
+     */
+    public function export(): StreamedResponse
+    {
+        $records = Finance::with('stockIn.product:id,sku,name', 'stockOut.product:id,sku,name')
+            ->orderByDesc('date')->get();
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="finances.csv"',
+        ];
+
+        $callback = function () use ($records) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['Tanggal', 'Deskripsi', 'Kategori', 'Tipe', 'Jumlah', 'Produk', 'Catatan']);
+
+            foreach ($records as $r) {
+                $produk = $r->stockIn?->product?->name ?? $r->stockOut?->product?->name ?? '-';
+                fputcsv($handle, [
+                    $r->date,
+                    $r->description,
+                    $r->category,
+                    $r->type,
+                    $r->amount,
+                    $produk,
+                    $r->notes ?? '',
+                ]);
+            }
+            fclose($handle);
+        };
+
+        return new StreamedResponse($callback, 200, $headers);
+    }
+
+    /**
      * GET /api/finances/summary
-     * Ringkasan per bulan/tahun
      */
     public function summary(Request $request): JsonResponse
     {

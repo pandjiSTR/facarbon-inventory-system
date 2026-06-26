@@ -33,14 +33,18 @@ class InvoiceController extends Controller
             $query->whereDate('date', '<=', $request->date_to);
         }
 
-        $invoices = $query->orderByDesc('date')->orderByDesc('id')->get();
+        $perPage = min((int) $request->get('per_page', 25), 100);
+        $invoices = $query->orderByDesc('date')->orderByDesc('id')->paginate($perPage);
 
         return response()->json([
             'success' => true,
-            'data'    => $invoices,
+            'data'    => $invoices->items(),
             'meta'    => [
-                'total'        => $invoices->count(),
-                'total_amount' => $invoices->sum('total_amount'),
+                'total'        => $invoices->total(),
+                'total_amount' => collect($invoices->items())->sum('total_amount'),
+                'per_page'     => $invoices->perPage(),
+                'current_page' => $invoices->currentPage(),
+                'last_page'    => $invoices->lastPage(),
             ],
         ]);
     }
@@ -134,6 +138,8 @@ class InvoiceController extends Controller
 
             DB::commit();
 
+            $this->forgetDashboardCache($validated['date']);
+
             return response()->json([
                 'success' => true,
                 'message' => "Invoice {$invoiceNumber} berhasil dibuat.",
@@ -179,6 +185,8 @@ class InvoiceController extends Controller
             $invoice->delete();
 
             DB::commit();
+
+            $this->forgetDashboardCache($invoice->date);
 
             return response()->json([
                 'success' => true,

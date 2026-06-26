@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\FinanceController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ImportController;
+use App\Http\Controllers\Api\UserController;
 
 // ─── PUBLIC ───────────────────────────────────────────────────────────────────
 Route::prefix('auth')->group(function () {
@@ -29,17 +30,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
 
     // Products
+    Route::get('/products/export', [ProductController::class, 'export']);
     Route::apiResource('products', ProductController::class);
     Route::patch('/products/{product}/toggle-active', [ProductController::class, 'toggleActive']);
     Route::get('/products/{product}/stock-history',   [ProductController::class, 'stockHistory']);
 
     // Stock In
+    Route::get('/stock-in/export', [StockInController::class, 'export']);
     Route::apiResource('stock-in', StockInController::class)->except(['update']);
 
     // Stock Out
+    Route::get('/stock-out/export', [StockOutController::class, 'export']);
     Route::apiResource('stock-out', StockOutController::class)->except(['update']);
 
     // Finances
+    Route::get('/finances/export',   [FinanceController::class, 'export']);
     Route::get('/finances/summary',  [FinanceController::class, 'summary']);
     Route::get('/finances',          [FinanceController::class, 'index']);
     Route::get('/finances/{finance}',[FinanceController::class, 'show']);
@@ -47,6 +52,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Invoices
     Route::apiResource('invoices', InvoiceController::class)->except(['update']);
+
+    // Users
+    Route::apiResource('users', UserController::class);
 
     // Import Historis
     Route::prefix('import')->group(function () {

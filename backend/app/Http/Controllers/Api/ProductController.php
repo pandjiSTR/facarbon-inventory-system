@@ -7,6 +7,7 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ProductController extends Controller
 {
@@ -40,14 +41,18 @@ class ProductController extends Controller
             });
         }
 
-        $products = $query->orderBy('sku')->get();
+        $perPage = min((int) $request->input('per_page', 25), 100);
+        $products = $query->orderBy('sku')->paginate($perPage);
 
         return response()->json([
             'success' => true,
-            'data'    => $products,
+            'data'    => $products->items(),
             'meta'    => [
-                'total'         => $products->count(),
-                'out_of_stock'  => $products->where('current_stock', 0)->count(),
+                'total'         => $products->total(),
+                'out_of_stock'  => Product::where('current_stock', 0)->count(),
+                'per_page'      => $products->perPage(),
+                'current_page'  => $products->currentPage(),
+                'last_page'     => $products->lastPage(),
             ],
         ]);
     }
@@ -68,7 +73,7 @@ class ProductController extends Controller
             'online_price'        => 'nullable|integer|min:0',
             'current_stock'       => 'integer|min:0',
             'is_active'           => 'boolean',
-            'photo'               => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'photo'               => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048|dimensions:min_width=100,min_height=100,max_width=4000,max_height=4000',
         ]);
 
         if ($request->hasFile('photo')) {
@@ -76,6 +81,8 @@ class ProductController extends Controller
         }
 
         $product = Product::create($validated);
+
+        $this->forgetDashboardCache();
 
         return response()->json([
             'success' => true,
@@ -111,11 +118,10 @@ class ProductController extends Controller
             'reseller_price'      => 'sometimes|integer|min:0',
             'online_price'        => 'nullable|integer|min:0',
             'is_active'           => 'boolean',
-            'photo'               => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'photo'               => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048|dimensions:min_width=100,min_height=100,max_width=4000,max_height=4000',
         ]);
 
         if ($request->hasFile('photo')) {
-            // Hapus foto lama
             if ($product->photo) {
                 Storage::disk('public')->delete($product->photo);
             }
@@ -151,6 +157,8 @@ class ProductController extends Controller
 
         $product->delete(); // soft delete
 
+        $this->forgetDashboardCache();
+
         return response()->json([
             'success' => true,
             'message' => 'Produk berhasil dihapus.',
@@ -164,11 +172,52 @@ class ProductController extends Controller
     {
         $product->update(['is_active' => ! $product->is_active]);
 
+        $this->forgetDashboardCache();
+
         return response()->json([
             'success' => true,
             'message' => 'Status produk berhasil diubah.',
             'data'    => ['is_active' => $product->is_active],
         ]);
+    }
+
+    /**
+     * GET /api/products/{id}/stock-history
+     */
+    /**
+     * GET /api/products/export
+     * Export CSV semua produk
+     */
+    public function export(): StreamedResponse
+    {
+        $products = Product::orderBy('sku')->get();
+
+        $headers = [
+            'Content-Type'        => 'text/csv; charset=utf-8',
+            'Content-Disposition' => 'attachment; filename="products.csv"',
+        ];
+
+        $callback = function () use ($products) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, ['SKU', 'Nama', 'Carbon Type', 'Kompatibilitas', 'Harga Modal', 'Harga Reseller', 'Harga Online', 'Stok', 'Aktif']);
+
+            foreach ($products as $p) {
+                fputcsv($handle, [
+                    $p->sku,
+                    $p->name,
+                    $p->carbon_type,
+                    is_array($p->vespa_compatibility) ? implode('; ', $p->vespa_compatibility) : $p->vespa_compatibility,
+                    $p->modal_price,
+                    $p->reseller_price,
+                    $p->online_price ?? '',
+                    $p->current_stock,
+                    $p->is_active ? 'Ya' : 'Tidak',
+                ]);
+            }
+            fclose($handle);
+        };
+
+        return new StreamedResponse($callback, 200, $headers);
     }
 
     /**
