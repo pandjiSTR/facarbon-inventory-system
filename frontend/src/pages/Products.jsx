@@ -4,6 +4,7 @@ import { Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight, AlertCircle, Layo
 import api from '../api/axios'
 import ProductCard from '../components/ui/ProductCard'
 import ProductDetailDrawer from '../components/ui/ProductDetailDrawer'
+import ImageTooltip from '../components/ui/ImageTooltip'
 
 const fmt = (n) =>
   n != null
@@ -303,15 +304,17 @@ export default function Products() {
                       </span>
                     </td>
                     <td style={{ padding: '11px 14px', fontSize: 13, color: 'var(--text-primary)', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                      <span
-                        onClick={() => setDetailProduct(p)}
-                        title="Klik untuk detail produk"
-                        style={{ cursor: 'pointer', borderBottom: '1px dashed var(--border)', transition: 'color 0.15s' }}
-                        onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
-                        onMouseLeave={e => e.currentTarget.style.color = 'var(--text-primary)'}
-                      >
-                        {p.name}
-                      </span>
+                      <ImageTooltip src={p.photo_url} alt={p.name}>
+                        <span
+                          onClick={() => setDetailProduct(p)}
+                          title="Klik untuk detail produk"
+                          style={{ cursor: 'pointer', borderBottom: '1px dashed var(--border)', transition: 'color 0.15s' }}
+                          onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
+                          onMouseLeave={e => e.currentTarget.style.color = 'var(--text-primary)'}
+                        >
+                          {p.name}
+                        </span>
+                      </ImageTooltip>
                     </td>
                     <td style={{ padding: '11px 14px' }}>
                       <Badge type={p.carbon_type} />
