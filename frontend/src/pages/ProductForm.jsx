@@ -88,7 +88,7 @@ export default function ProductForm() {
         URL.revokeObjectURL(previewUrl)
       }
     }
-  }, [id, isEdit])
+  }, [id, isEdit]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (key, val) => {
     setForm(f => ({ ...f, [key]: val }))

@@ -7,10 +7,19 @@ export default function ImageModal({ src, alt, isOpen, onClose, productName }) {
   const [closing, setClosing] = useState(false)
   const timerRef = useRef(null)
 
+  const handleClose = useCallback(() => {
+    if (closing) return
+    setClosing(true)
+    timerRef.current = setTimeout(() => {
+      onClose?.()
+      setClosing(false)
+    }, 120)
+  }, [closing, onClose])
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
-      setImgState('loading')
+      setImgState('loading') // eslint-disable-line react-hooks/set-state-in-effect
       setClosing(false)
     } else {
       document.body.style.overflow = ''
@@ -27,16 +36,7 @@ export default function ImageModal({ src, alt, isOpen, onClose, productName }) {
     }
     if (isOpen) window.addEventListener('keydown', handleEsc)
     return () => window.removeEventListener('keydown', handleEsc)
-  }, [isOpen, closing])
-
-  const handleClose = useCallback(() => {
-    if (closing) return
-    setClosing(true)
-    timerRef.current = setTimeout(() => {
-      onClose?.()
-      setClosing(false)
-    }, 120)
-  }, [closing, onClose])
+  }, [isOpen, closing, handleClose])
 
   if (!isOpen && !closing) return null
   if (!src && !closing) return null
@@ -65,7 +65,6 @@ export default function ImageModal({ src, alt, isOpen, onClose, productName }) {
         boxShadow: '0 25px 50px rgba(0,0,0,0.4)',
         animation: closing ? 'scaleOut 0.12s ease-in forwards' : 'scaleIn 0.2s ease-out',
       }}>
-        {/* Close button */}
         <button
           onClick={handleClose}
           style={{
@@ -82,7 +81,6 @@ export default function ImageModal({ src, alt, isOpen, onClose, productName }) {
           <X size={18} />
         </button>
 
-        {/* Image container */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           minHeight: 200, maxHeight: 'calc(90vh - 48px)',
@@ -118,7 +116,6 @@ export default function ImageModal({ src, alt, isOpen, onClose, productName }) {
           )}
         </div>
 
-        {/* Caption */}
         {productName && (
           <div style={{
             padding: '10px 16px',

@@ -100,15 +100,21 @@ export default function ProductDetailDrawer({ product, isOpen, onClose, onEdit }
     }, 120)
   }, [closing, onClose])
 
-  // Lock body scroll when modal opens
+  // Lock body scroll when modal opens (DOM only, no setState)
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
-      setClosing(false)
     } else {
       document.body.style.overflow = ''
     }
     return () => { document.body.style.overflow = '' }
+  }, [isOpen])
+
+  // Reset closing state when modal reopens
+  useEffect(() => {
+    if (isOpen) {
+      setClosing(false) // eslint-disable-line react-hooks/set-state-in-effect
+    }
   }, [isOpen])
 
   // ESC key
@@ -122,12 +128,8 @@ export default function ProductDetailDrawer({ product, isOpen, onClose, onEdit }
 
   // Fetch stock history
   useEffect(() => {
-    if (!isOpen || !product) {
-      setStockHistory(null)
-      setHistoryError(false)
-      return
-    }
-    setHistoryLoading(true)
+    if (!isOpen || !product?.id) return
+    setHistoryLoading(true) // eslint-disable-line react-hooks/set-state-in-effect
     setHistoryError(false)
     api.get(`/products/${product.id}/stock-history`)
       .then(res => setStockHistory(res.data.data))

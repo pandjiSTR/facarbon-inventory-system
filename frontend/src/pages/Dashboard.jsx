@@ -5,70 +5,22 @@ import {
 } from 'recharts'
 import {
   Package, TrendingUp, TrendingDown, AlertTriangle,
-  FileText, DollarSign, ShoppingCart, BarChart3
+  FileText, BarChart3
 } from 'lucide-react'
 import api from '../api/axios'
+import StatCard from '../components/ui/StatCard'
+import { CardSkeleton, ChartSkeleton } from '../components/ui/LoadingSkeleton'
+
+const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des']
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (n) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
 
-const MONTHS = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des']
-
-// Dummy monthly data — will be replaced when /api/reports endpoint is connected
-const buildMonthlyDummy = () =>
-  MONTHS.map((m, i) => ({ month: m, masuk: 0, keluar: 0, _i: i }))
-
 // Carbon type labels
 const CARBON_LABELS = { twill: 'Twill', forged: 'Forged', plain: 'Plain' }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
-function StatCard({ icon: Icon, label, value, sub, accent, iconBg }) {
-  return (
-    <div className="card-hover" style={{
-      background: 'var(--bg-surface)',
-      border: '1px solid var(--border)',
-      borderRadius: 12,
-      padding: '18px 20px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 12,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <div style={{
-          width: 36, height: 36,
-          borderRadius: 8,
-          background: iconBg || 'var(--accent-bg)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          flexShrink: 0,
-        }}>
-          <Icon size={16} color={accent || 'var(--accent)'} strokeWidth={1.8} />
-        </div>
-        {sub && (
-          <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Inter, sans-serif' }}>
-            {sub}
-          </span>
-        )}
-      </div>
-      <div>
-        <div style={{
-          fontFamily: 'JetBrains Mono, monospace',
-          fontSize: 22,
-          fontWeight: 600,
-          color: accent || 'var(--text-primary)',
-          lineHeight: 1.2,
-          marginBottom: 4,
-        }}>
-          {value}
-        </div>
-        <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, sans-serif' }}>
-          {label}
-        </div>
-      </div>
-    </div>
-  )
-}
-
+// ── Helpers ──────────────────────────────────────────────────────────────────
 function SectionTitle({ children }) {
   return (
     <h2 style={{
@@ -122,9 +74,14 @@ export default function Dashboard() {
   }, [])
 
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-      <div style={{ color: 'var(--text-muted)', fontFamily: 'Inter, sans-serif', fontSize: 13 }}>
-        Memuat dashboard...
+    <div style={{ maxWidth: 1100 }}>
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ width: 140, height: 20, borderRadius: 6, background: 'var(--bg-surface)', animation: 'pulse 1.5s ease-in-out infinite', marginBottom: 8 }} />
+        <div style={{ width: 200, height: 14, borderRadius: 4, background: 'var(--bg-surface)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+      </div>
+      <CardSkeleton count={6} height={100} />
+      <div style={{ marginTop: 28 }}>
+        <ChartSkeleton height={200} />
       </div>
     </div>
   )
@@ -146,17 +103,8 @@ export default function Dashboard() {
   })
   const carbonChartData = Object.entries(carbonTypeMap).map(([type, count]) => ({ type, 'Stok Kosong': count }))
 
-  // Line chart: monthly stock flow (dummy — replace with real API later)
-  const monthlyData = buildMonthlyDummy()
-  // Inject current month actual values
-  if (data.period) {
-    const idx = data.period.month - 1
-    monthlyData[idx].masuk = stock.in_this_month
-    monthlyData[idx].keluar = stock.out_this_month
-  }
-  // Slice to show last 6 months
-  const currentMonthIdx = (data.period?.month || 6) - 1
-  const last6 = monthlyData.slice(Math.max(0, currentMonthIdx - 5), currentMonthIdx + 1)
+  // Line chart: monthly stock flow from API data
+  const last6 = data.monthly_chart || []
 
   return (
     <div style={{ maxWidth: 1100 }}>
@@ -179,50 +127,16 @@ export default function Dashboard() {
       {/* Stat Cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
         gap: 14,
         marginBottom: 28,
       }}>
-        <StatCard
-          icon={Package}
-          label="Total Produk"
-          value={products.total}
-          sub={`${products.active} aktif`}
-        />
-        <StatCard
-          icon={AlertTriangle}
-          label="Stok Kosong"
-          value={products.out_of_stock}
-          accent="var(--red)"
-          iconBg="var(--red-bg)"
-          sub="produk"
-        />
-        <StatCard
-          icon={BarChart3}
-          label="Stok Tipis"
-          value={products.low_stock}
-          accent="#e0a85a"
-          iconBg="rgba(224,168,90,0.08)"
-          sub="perlu restock"
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="Stok Masuk"
-          value={stock.in_this_month}
-          sub="bulan ini"
-        />
-        <StatCard
-          icon={TrendingDown}
-          label="Stok Keluar"
-          value={stock.out_this_month}
-          sub="bulan ini"
-        />
-        <StatCard
-          icon={FileText}
-          label="Faktur"
-          value={invoices.count}
-          sub={fmt(invoices.amount)}
-        />
+        <StatCard icon={Package} label="Total Produk" value={products.total} sub={`${products.active} aktif`} />
+        <StatCard icon={AlertTriangle} label="Stok Kosong" value={products.out_of_stock} accent="var(--red)" iconBg="var(--red-bg)" sub="produk" />
+        <StatCard icon={BarChart3} label="Stok Tipis" value={products.low_stock} accent="#e0a85a" iconBg="rgba(224,168,90,0.08)" sub="perlu restock" />
+        <StatCard icon={TrendingUp} label="Stok Masuk" value={stock.in_this_month} sub="bulan ini" />
+        <StatCard icon={TrendingDown} label="Stok Keluar" value={stock.out_this_month} sub="bulan ini" />
+        <StatCard icon={FileText} label="Faktur" value={invoices.count} sub={fmt(invoices.amount)} />
       </div>
 
       {/* Finance Summary */}
@@ -230,7 +144,7 @@ export default function Dashboard() {
         <SectionTitle>Ringkasan Keuangan</SectionTitle>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
           gap: 14,
         }}>
           {[
@@ -313,7 +227,7 @@ export default function Dashboard() {
           <ResponsiveContainer width="100%" height={180}>
             <LineChart data={last6}>
               <CartesianGrid strokeDasharray="3 3" stroke="#1e1e1e" vertical={false} />
-              <XAxis dataKey="month" tick={{ fill: '#666', fontSize: 11, fontFamily: 'Inter' }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="label" tick={{ fill: '#666', fontSize: 11, fontFamily: 'Inter' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: '#666', fontSize: 11, fontFamily: 'JetBrains Mono' }} axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip content={<CustomTooltip />} />
               <Legend

@@ -25,12 +25,14 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
+            \App\Helpers\SecurityLogger::log('failed_login_attempt', ['email' => $request->email]);
             throw ValidationException::withMessages([
                 'email' => ['Email atau password salah.'],
             ]);
         }
 
         if (! $user->is_active) {
+            \App\Helpers\SecurityLogger::log('login_blocked_inactive', ['user_id' => $user->id, 'email' => $user->email]);
             return response()->json([
                 'success' => false,
                 'message' => 'Akun tidak aktif. Hubungi admin.',

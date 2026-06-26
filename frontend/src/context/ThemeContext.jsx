@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useState, useEffect } from 'react'
 
-const ThemeContext = createContext(null)
+export const ThemeContext = createContext(null) // eslint-disable-line react-refresh/only-export-components
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
@@ -27,8 +27,4 @@ export function ThemeProvider({ children }) {
   )
 }
 
-export const useTheme = () => {
-  const ctx = useContext(ThemeContext)
-  if (!ctx) throw new Error('useTheme must be used within ThemeProvider')
-  return ctx
-}
+// useTheme moved to useTheme.js for react-refresh compatibility

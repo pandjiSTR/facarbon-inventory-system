@@ -1,7 +1,7 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useState } from 'react'
 import api from '../api/axios'
 
-const AuthContext = createContext(null)
+export const AuthContext = createContext(null) // eslint-disable-line react-refresh/only-export-components
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
@@ -33,7 +33,7 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       await api.post('/auth/logout')
-    } catch (_) {}
+    } catch { /* ignore */ }
     localStorage.removeItem('auth_token')
     localStorage.removeItem('auth_user')
     setUser(null)
@@ -48,8 +48,4 @@ export function AuthProvider({ children }) {
   )
 }
 
-export const useAuth = () => {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
-  return ctx
-}
+// useAuth moved to useAuth.js for react-refresh compatibility

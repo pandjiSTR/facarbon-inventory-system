@@ -17,6 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         ]);
+
+        $middleware->appendToGroup('api', [
+            \App\Http\Middleware\SecurityHeaders::class,
+            'throttle:60,1',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // Handle 404 as JSON for API

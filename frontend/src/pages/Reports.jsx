@@ -5,6 +5,7 @@ import {
 } from 'recharts'
 import { Calendar, TrendingUp, TrendingDown, Package } from 'lucide-react'
 import api from '../api/axios'
+import { TableSkeleton } from '../components/ui/LoadingSkeleton'
 
 const fmt = (n) =>
   new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n || 0)
@@ -221,9 +222,7 @@ export default function Reports() {
         </div>
 
         {loading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
-            Memuat laporan...
-          </div>
+          <TableSkeleton rows={4} columns={6} />
         ) : productReport.length === 0 ? (
           <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
             Tidak ada pergerakan stok di periode ini
