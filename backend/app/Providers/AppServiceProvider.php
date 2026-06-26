@@ -40,6 +40,10 @@ class AppServiceProvider extends ServiceProvider
 
     private function validateEnvironment(): void
     {
+        if (App::runningInConsole()) {
+            return;
+        }
+
         $required = ['app.key'];
 
         if (App::environment('production')) {
