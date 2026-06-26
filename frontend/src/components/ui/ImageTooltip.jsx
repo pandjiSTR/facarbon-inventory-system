@@ -46,8 +46,10 @@ export default function ImageTooltip({ src, alt, children, onClick }) {
 
   const handlePreviewClick = useCallback((e) => {
     e.stopPropagation()
-    setShow(false)
     onClick?.()
+    // rAF — modal overlay sudah ngerender duluan, nutup preview
+    // baru setelah itu preview di-remove dari DOM (gak kelihatan ilangnya)
+    requestAnimationFrame(() => setShow(false))
   }, [onClick])
 
   useEffect(() => {
