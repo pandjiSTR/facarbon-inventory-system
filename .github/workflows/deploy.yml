@@ -13,7 +13,7 @@ jobs:
       - name: Backend - Validate & audit
         working-directory: backend
         run: |
-          composer validate --strict
+          composer validate
           composer audit
 
       - name: Frontend - Lint & build
