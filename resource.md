@@ -273,7 +273,7 @@ facarbon-inventory-system/
 │   │       ├── UserSeeder.php               ← 2 user: admin + staff
 │   │       └── ProductSeeder.php            ← 24 produk FAC-001 s/d FAC-024
 │   ├── routes/
-│   │   └── api.php                          ← 42 endpoint
+│   │   └── api.php                          ← 43 endpoint
 │   ├── tests/
 │   │   └── Feature/Api/
 │   │       ├── AuthTest.php                 ← 6 tests
@@ -694,7 +694,7 @@ Base URL: `http://127.0.0.1:8000/api` (local) / `https://facarbon-backend.onrend
 | Invoices | 4 | ✅ Sanctum |
 | Users | 5 | ✅ Sanctum |
 | Import Excel | 6 | ✅ Sanctum |
-| **Total** | **42** | |
+| **Total** | **42*** | *register route tidak punya method controller — 43 route terdaftar, 42 functional |
 
 ### 7.2 Response Shape
 
@@ -2002,7 +2002,11 @@ VITE_API_URL=http://127.0.0.1:8000/api
 | **SoftDelete mismatch** | StockIn/StockOut/Finance tidak punya `deleted_at` di production → SoftDeletes di-remove. Data terhapus permanen (no audit trail). | Sesuai design awal (hard delete), tapi berbeda dari ekspektasi dokumentasi |
 | **`register` route error** | Route `/auth/register` ada di `api.php` tapi controller tidak punya method `register()`. Memanggil endpoint ini akan error. | Tidak mengganggu — register via UserController (admin-only) |
 | **`min_stock` tidak ada di DB** | Field `min_stock` tidak ada di migration/model, hanya di form ProductForm (nilai dikirim tapi diabaikan backend). | Low stock badge di Sidebar selalu 0 |
-| **Sidebar low stock badge** | `AppLayout` fetch `/products?low_stock=1` di frontend yang tidak didukung backend filter → selalu 0. | Badge merah tidak pernah muncul |
+| **Sidebar low stock badge** | `AppLayout` fetch `/products?low_stock=1` (filter backend tdk didukung) + filter `p.stock <= p.min_stock` (field `stock` tdk ada, harusnya `current_stock`). | Badge merah tidak pernah muncul |
+| **Carbon type `plain`** | Frontend ProductForm menawarkan `plain` sebagai option, backend validasi hanya menerima `forged`/`twill`. | Submit dengan `plain` akan 422 |
+| **Low stock 3 definisi konflik** | Dashboard: `current_stock > 0 && <= 3`. Context.md: `current_stock = 0`. Frontend: `stock <= min_stock`. | Tidak ada definisi yang konsisten |
+| **Route count mismatch** | resource.md & context.md bilang 42 endpoint. api.php punya 43 route (register ada route tapi tdk ada method). | Dokumentasi kurang presisi |
+| **Placeholder.jsx orphan** | `frontend/src/pages/Placeholder.jsx` ada di disk tapi tidak di-import/diroute di manapun. | File sampah — tidak mengganggu |
 | **Products seeder vespa_compatibility** | Seeder menyimpan string bukan JSON array. Cast ke `array` menghasilkan array dengan 1 elemen (string). | Bisa menyebabkan issue display di frontend jika kode mengharapkan multi-element array |
 | **Transactions tanpa pagination** | Halaman Transactions fetch ALL data dan filter client-side. Dataset besar (1000+) bisa lambat. | Scale issue for future growth |
 | **Reports tanpa pagination** | Sama seperti Transactions — fetch all, compute client-side. | Scale issue |
