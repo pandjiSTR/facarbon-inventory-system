@@ -118,34 +118,36 @@ export default function Products() {
             )}
           </p>
         </div>
-        <button
-          onClick={() => navigate('/products/create')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: 'var(--accent)', border: 'none', borderRadius: 8,
-            padding: '9px 16px', cursor: 'pointer',
-            color: '#0d0d0d', fontFamily: 'Inter, sans-serif',
-            fontSize: 13, fontWeight: 600,
-          }}
-        >
-          <Plus size={14} />
-          Tambah Produk
-        </button>
-        <button
-          onClick={() => exportCSV('/products/export', 'products.csv')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6,
-            background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8,
-            padding: '9px 16px', cursor: 'pointer',
-            color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif',
-            fontSize: 13, fontWeight: 500, marginLeft: 8,
-          }}
-          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
-          onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
-        >
-          <Download size={14} />
-          Export CSV
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => navigate('/products/create')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'var(--accent)', border: 'none', borderRadius: 8,
+              padding: '9px 16px', cursor: 'pointer',
+              color: '#0d0d0d', fontFamily: 'Inter, sans-serif',
+              fontSize: 13, fontWeight: 600,
+            }}
+          >
+            <Plus size={14} />
+            Tambah Produk
+          </button>
+          <button
+            onClick={() => exportCSV('/products/export', 'products.csv')}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8,
+              padding: '9px 16px', cursor: 'pointer',
+              color: 'var(--text-primary)', fontFamily: 'Inter, sans-serif',
+              fontSize: 13, fontWeight: 500,
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+          >
+            <Download size={14} />
+            Export CSV
+          </button>
+        </div>
       </div>
 
       <div style={{
