@@ -285,7 +285,7 @@ export default function StockIn() {
               { label: 'Total Qty Masuk', value: meta.total_quantity, mono: true },
               { label: 'Total Nilai Modal', value: fmt(meta.total_modal), mono: true },
             ].map(({ label, value }) => (
-              <div key={label} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
+              <div key={label} className="card-hover" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Inter, sans-serif', marginBottom: 6 }}>{label}</div>
                 <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 18, fontWeight: 600, color: 'var(--accent)' }}>{value}</div>
               </div>

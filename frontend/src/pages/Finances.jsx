@@ -157,7 +157,7 @@ export default function Finances() {
           { label: 'Total Pengeluaran', value: fmt(meta.total_debit), color: 'var(--red)', icon: TrendingDown, bg: 'var(--red-bg)' },
           { label: 'Saldo', value: fmt(meta.saldo), color: meta.saldo >= 0 ? 'var(--accent)' : 'var(--red)', icon: Wallet, bg: 'var(--accent-bg)' },
         ].map(({ label, value, color, icon: Icon, bg }) => (
-          <div key={label} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px' }}>
+          <div key={label} className="card-hover" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, padding: '18px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <span style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'Inter, sans-serif' }}>{label}</span>
               <div style={{ width: 32, height: 32, borderRadius: 8, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

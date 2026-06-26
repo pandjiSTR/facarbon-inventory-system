@@ -64,7 +64,7 @@ export default function ProductCard({ product, onEdit, onDelete, onToggle, onSho
 
   return (
     <>
-      <div style={{
+      <div className="card-hover" style={{
         background: 'var(--bg-surface)',
         border: '1px solid var(--border)',
         borderRadius: 12,

@@ -338,7 +338,7 @@ export default function StockOut() {
               { label: 'Total Qty Keluar', value: meta.total_quantity },
               { label: 'Total Pendapatan', value: fmt(meta.total_revenue) },
             ].map(({ label, value }) => (
-              <div key={label} style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
+              <div key={label} className="card-hover" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 10, padding: '14px 16px' }}>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'Inter, sans-serif', marginBottom: 6 }}>{label}</div>
                 <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 18, fontWeight: 600, color: 'var(--accent)' }}>{value}</div>
               </div>

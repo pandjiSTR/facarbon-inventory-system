@@ -25,7 +25,7 @@ const CARBON_LABELS = { twill: 'Twill', forged: 'Forged', plain: 'Plain' }
 // ── Sub-components ────────────────────────────────────────────────────────────
 function StatCard({ icon: Icon, label, value, sub, accent, iconBg }) {
   return (
-    <div style={{
+    <div className="card-hover" style={{
       background: 'var(--bg-surface)',
       border: '1px solid var(--border)',
       borderRadius: 12,
@@ -238,7 +238,7 @@ export default function Dashboard() {
             { label: 'Pengeluaran', value: finances.pengeluaran, color: 'var(--red)' },
             { label: 'Laba Kotor', value: finances.laba_kotor, color: 'var(--accent)' },
           ].map(({ label, value, color }) => (
-            <div key={label} style={{
+            <div key={label} className="card-hover" style={{
               background: 'var(--bg-surface)',
               border: '1px solid var(--border)',
               borderRadius: 12,

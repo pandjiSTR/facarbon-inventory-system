@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { X, Loader2, AlertCircle, ExternalLink } from 'lucide-react'
 import api from '../../api/axios'
 import ImageModal from './ImageModal'
@@ -89,11 +89,22 @@ export default function ProductDetailDrawer({ product, isOpen, onClose, onEdit }
   const [historyLoading, setHistoryLoading] = useState(false)
   const [historyError, setHistoryError] = useState(false)
   const [imgModalOpen, setImgModalOpen] = useState(false)
+  const [closing, setClosing] = useState(false)
+
+  const animatedClose = useCallback(() => {
+    if (closing) return
+    setClosing(true)
+    setTimeout(() => {
+      onClose()
+      setClosing(false)
+    }, 120)
+  }, [closing, onClose])
 
   // Lock body scroll when modal opens
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
+      setClosing(false)
     } else {
       document.body.style.overflow = ''
     }
@@ -103,11 +114,11 @@ export default function ProductDetailDrawer({ product, isOpen, onClose, onEdit }
   // ESC key
   useEffect(() => {
     const handleEsc = (e) => {
-      if (e.key === 'Escape' && isOpen) onClose()
+      if (e.key === 'Escape' && isOpen && !closing) animatedClose()
     }
     if (isOpen) window.addEventListener('keydown', handleEsc)
     return () => window.removeEventListener('keydown', handleEsc)
-  }, [isOpen, onClose])
+  }, [isOpen, closing, animatedClose])
 
   // Fetch stock history
   useEffect(() => {
@@ -124,7 +135,8 @@ export default function ProductDetailDrawer({ product, isOpen, onClose, onEdit }
       .finally(() => setHistoryLoading(false))
   }, [isOpen, product?.id])
 
-  if (!isOpen || !product) return null
+  if (!isOpen && !closing) return null
+  if (!product) return null
 
   const p = product
 
@@ -132,11 +144,11 @@ export default function ProductDetailDrawer({ product, isOpen, onClose, onEdit }
     <>
       {/* Overlay */}
       <div
-        onClick={onClose}
+        onClick={animatedClose}
         style={{
           position: 'fixed', inset: 0, zIndex: 50,
           background: 'rgba(0,0,0,0.6)',
-          animation: 'fadeIn 0.15s ease-out',
+          animation: closing ? 'fadeOut 0.12s ease-in forwards' : 'fadeIn 0.15s ease-out',
         }}
       />
 
@@ -155,7 +167,7 @@ export default function ProductDetailDrawer({ product, isOpen, onClose, onEdit }
           display: 'flex', flexDirection: 'column',
           overflow: 'hidden',
           boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
-          animation: 'scaleIn 0.2s ease-out',
+          animation: closing ? 'scaleOut 0.12s ease-in forwards' : 'scaleIn 0.2s ease-out',
         }}>
           {/* ── Header ── */}
           <div style={{
@@ -185,7 +197,7 @@ export default function ProductDetailDrawer({ product, isOpen, onClose, onEdit }
                 Edit
               </button>
               <button
-                onClick={onClose}
+                onClick={animatedClose}
                 style={{
                   background: 'var(--bg-elevated)', border: '1px solid var(--border)',
                   borderRadius: 6, padding: '6px 8px', cursor: 'pointer',

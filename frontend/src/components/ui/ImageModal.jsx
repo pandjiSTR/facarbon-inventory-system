@@ -1,15 +1,17 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { X, Loader2, ImageOff } from 'lucide-react'
 
 export default function ImageModal({ src, alt, isOpen, onClose, productName }) {
   const overlayRef = useRef(null)
-  const [imgState, setImgState] = useState('loading') // loading | loaded | error
+  const [imgState, setImgState] = useState('loading')
+  const [closing, setClosing] = useState(false)
   const timerRef = useRef(null)
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
       setImgState('loading')
+      setClosing(false)
     } else {
       document.body.style.overflow = ''
     }
@@ -21,16 +23,26 @@ export default function ImageModal({ src, alt, isOpen, onClose, productName }) {
 
   useEffect(() => {
     const handleEsc = (e) => {
-      if (e.key === 'Escape' && isOpen) onClose()
+      if (e.key === 'Escape' && isOpen && !closing) handleClose()
     }
     if (isOpen) window.addEventListener('keydown', handleEsc)
     return () => window.removeEventListener('keydown', handleEsc)
-  }, [isOpen, onClose])
+  }, [isOpen, closing])
 
-  if (!isOpen || !src) return null
+  const handleClose = useCallback(() => {
+    if (closing) return
+    setClosing(true)
+    timerRef.current = setTimeout(() => {
+      onClose?.()
+      setClosing(false)
+    }, 120)
+  }, [closing, onClose])
+
+  if (!isOpen && !closing) return null
+  if (!src && !closing) return null
 
   const handleOverlayClick = (e) => {
-    if (e.target === overlayRef.current) onClose()
+    if (e.target === overlayRef.current) handleClose()
   }
 
   return (
@@ -42,7 +54,7 @@ export default function ImageModal({ src, alt, isOpen, onClose, productName }) {
         background: 'rgba(0,0,0,0.7)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: 16,
-        animation: 'fadeIn 0.2s ease-out',
+        animation: closing ? 'fadeOut 0.12s ease-in forwards' : 'fadeIn 0.2s ease-out',
       }}
     >
       <div style={{
@@ -51,11 +63,11 @@ export default function ImageModal({ src, alt, isOpen, onClose, productName }) {
         background: 'var(--bg-surface)',
         borderRadius: 12, overflow: 'hidden',
         boxShadow: '0 25px 50px rgba(0,0,0,0.4)',
-        animation: 'scaleIn 0.2s ease-out',
+        animation: closing ? 'scaleOut 0.12s ease-in forwards' : 'scaleIn 0.2s ease-out',
       }}>
         {/* Close button */}
         <button
-          onClick={onClose}
+          onClick={handleClose}
           style={{
             position: 'absolute', top: 8, right: 8, zIndex: 1,
             background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '50%',
@@ -121,17 +133,4 @@ export default function ImageModal({ src, alt, isOpen, onClose, productName }) {
       </div>
     </div>
   )
-}
-
-// Inline keyframes — injected once via a <style> tag
-const styleId = 'fis-image-modal-styles'
-if (!document.getElementById(styleId)) {
-  const style = document.createElement('style')
-  style.id = styleId
-  style.textContent = `
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-  `
-  document.head.appendChild(style)
 }

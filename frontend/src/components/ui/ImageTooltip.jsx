@@ -1,17 +1,26 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 
 export default function ImageTooltip({ src, alt, children, onClick }) {
-  const [show, setShow] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const [visible, setVisible] = useState(false)
   const [pos, setPos] = useState({ top: 0, left: 0 })
   const showTimer = useRef(null)
   const hideTimer = useRef(null)
+  const cleanupTimer = useRef(null)
   const wrapperRef = useRef(null)
 
   const IMG_W = 180
   const TEXT_H = 32
   const GAP = 8
 
-  const handleEnter = useCallback(() => {
+  const hide = useCallback(() => {
+    clearTimeout(showTimer.current)
+    clearTimeout(hideTimer.current)
+    setVisible(false)
+    cleanupTimer.current = setTimeout(() => setMounted(false), 150)
+  }, [])
+
+  const show = useCallback(() => {
     const el = wrapperRef.current
     if (!el) return
     const rect = el.getBoundingClientRect()
@@ -26,38 +35,50 @@ export default function ImageTooltip({ src, alt, children, onClick }) {
       top = window.innerHeight - h - 8
     }
     setPos({ top, left })
-    clearTimeout(hideTimer.current)
-    showTimer.current = setTimeout(() => setShow(true), 250)
+    clearTimeout(cleanupTimer.current)
+    setMounted(true)
+    requestAnimationFrame(() => setVisible(true))
   }, [src])
+
+  const handleEnter = useCallback(() => {
+    clearTimeout(hideTimer.current)
+    clearTimeout(cleanupTimer.current)
+    showTimer.current = setTimeout(() => show(), 250)
+  }, [show])
 
   const handleLeave = useCallback(() => {
     clearTimeout(showTimer.current)
-    // Grace period 200ms — kalau mouse masuk ke preview, hide di-cancel
-    hideTimer.current = setTimeout(() => setShow(false), 200)
-  }, [])
+    hideTimer.current = setTimeout(() => hide(), 200)
+  }, [hide])
 
   const handlePreviewEnter = useCallback(() => {
     clearTimeout(hideTimer.current)
   }, [])
 
   const handlePreviewLeave = useCallback(() => {
-    setShow(false)
-  }, [])
+    hide()
+  }, [hide])
 
   const handlePreviewClick = useCallback((e) => {
     e.stopPropagation()
     onClick?.()
-    // rAF — modal overlay sudah ngerender duluan, nutup preview
-    // baru setelah itu preview di-remove dari DOM (gak kelihatan ilangnya)
-    requestAnimationFrame(() => setShow(false))
-  }, [onClick])
+    hide()
+  }, [onClick, hide])
 
   useEffect(() => {
     return () => {
       clearTimeout(showTimer.current)
       clearTimeout(hideTimer.current)
+      clearTimeout(cleanupTimer.current)
     }
   }, [])
+
+  const popStyle = {
+    transition: 'opacity 0.15s ease-out, transform 0.15s ease-out',
+    opacity: visible ? 1 : 0,
+    transform: visible ? 'scale(1) translateY(0)' : 'scale(0.95) translateY(-3px)',
+    pointerEvents: visible ? 'auto' : 'none',
+  }
 
   return (
     <span
@@ -69,7 +90,7 @@ export default function ImageTooltip({ src, alt, children, onClick }) {
       {children}
 
       {/* Image preview */}
-      {show && src && (
+      {mounted && src && (
         <div
           style={{
             position: 'fixed',
@@ -77,13 +98,12 @@ export default function ImageTooltip({ src, alt, children, onClick }) {
             left: pos.left,
             zIndex: 40,
             cursor: 'pointer',
-            animation: 'fadeIn 0.12s ease-out',
+            ...popStyle,
           }}
           onMouseEnter={handlePreviewEnter}
           onMouseLeave={handlePreviewLeave}
           onClick={handlePreviewClick}
         >
-          {/* Gambar */}
           <div style={{
             width: IMG_W,
             height: IMG_W,
@@ -99,7 +119,6 @@ export default function ImageTooltip({ src, alt, children, onClick }) {
               style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
           </div>
-          {/* Label */}
           <div style={{
             marginTop: 4,
             padding: '5px 0',
@@ -119,7 +138,7 @@ export default function ImageTooltip({ src, alt, children, onClick }) {
       )}
 
       {/* Text fallback — no image */}
-      {show && !src && (
+      {mounted && !src && (
         <div
           style={{
             position: 'fixed',
@@ -135,7 +154,7 @@ export default function ImageTooltip({ src, alt, children, onClick }) {
             color: 'var(--text-secondary)',
             cursor: 'pointer',
             whiteSpace: 'nowrap',
-            animation: 'fadeIn 0.12s ease-out',
+            ...popStyle,
           }}
           onMouseEnter={handlePreviewEnter}
           onMouseLeave={handlePreviewLeave}

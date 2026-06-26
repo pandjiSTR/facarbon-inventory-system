@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import api from '../../api/axios'
 
 export default function AppLayout() {
+  const location = useLocation()
   const [lowStockCount, setLowStockCount] = useState(0)
 
   useEffect(() => {
@@ -31,7 +32,9 @@ export default function AppLayout() {
           overflowX: 'hidden',
         }}
       >
-        <Outlet />
+        <div key={location.pathname} style={{ animation: 'fadeIn 0.25s ease-out' }}>
+          <Outlet />
+        </div>
       </main>
     </div>
   )
