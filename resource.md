@@ -280,9 +280,9 @@ facarbon-inventory-system/
 │   │       ├── ProductApiTest.php           ← 6 tests
 │   │       ├── StockInApiTest.php           ← 3 tests
 │   │       ├── StockOutApiTest.php          ← 3 tests
-│   │       ├── FinanceApiTest.php           ← 9 tests
+│   │       ├── FinanceApiTest.php           ← 10 tests
 │   │       ├── InvoiceApiTest.php           ← 4 tests
-│   │       └── ImportApiTest.php            ← 9 tests
+│   │       └── ImportApiTest.php            ← 10 tests
 │   ├── .env.example
 │   ├── composer.json
 │   └── render.yaml                         ← (opsional, root punya sendiri)
@@ -521,7 +521,6 @@ InvoiceItem ──belongsTo──> Product (opsional, SET NULL on delete)
 | current_stock | INTEGER | NOT NULL, DEFAULT 0 | Auto-calculate via recalculateStock() |
 | photo | VARCHAR(255) | NULLABLE | Path foto produk |
 | is_active | BOOLEAN | NOT NULL, DEFAULT true | Status aktif |
-| min_stock | INTEGER | NOT NULL, DEFAULT 0 | (tidak berfungsi penuh — hanya display) |
 | deleted_at | TIMESTAMP | NULLABLE | SoftDeletes |
 | created_at | TIMESTAMP | NULLABLE | |
 | updated_at | TIMESTAMP | NULLABLE | |
@@ -1484,10 +1483,10 @@ Semua enum disimpan sebagai string di database (tidak menggunakan PHP 8.1 native
 | `ProductApiTest.php` | 6 | List, create, show, update, delete (stock>0 → fail, stock=0 → ok), toggle active |
 | `StockInApiTest.php` | 3 | Create + stock update + finance auto, list, delete + recalculate |
 | `StockOutApiTest.php` | 3 | Create + stock update + finance auto + out-of-stock notification, reject insufficient stock, delete + recalculate |
-| `FinanceApiTest.php` | 9 | Create debit, create kredit, list, filter by type, filter by category, show, validation errors (missing fields, invalid type, invalid category, invalid amount) |
+| `FinanceApiTest.php` | 10 | Create debit, create kredit, list, filter by type, filter by category, show, validation errors (5 variants: missing fields, invalid type, invalid category, invalid amount) |
 | `InvoiceApiTest.php` | 4 | Create multi-item + stock-out + finance, delete cascade + stock revert, reject insufficient stock, list |
-| `ImportApiTest.php` | 9 | Finance preview (no file, invalid type), stock-in preview (no file, invalid type), stock-out preview (no file, invalid type), finance confirm, stock-in confirm, stock-out confirm (sufficient stock), stock-out confirm (insufficient stock → skip) |
-| **Total** | **40** | |
+| `ImportApiTest.php` | 10 | Finance preview (2: no file, invalid type), stock-in preview (2: no file, invalid type), stock-out preview (2: no file, invalid type), finance confirm, stock-in confirm, stock-out confirm (sufficient stock), stock-out confirm (insufficient stock → skip) |
+| **Total** | **42** | |
 
 ### 14.3 Key Test Patterns
 
@@ -2002,7 +2001,7 @@ VITE_API_URL=http://127.0.0.1:8000/api
 |---|---|---|
 | **SoftDelete mismatch** | StockIn/StockOut/Finance tidak punya `deleted_at` di production → SoftDeletes di-remove. Data terhapus permanen (no audit trail). | Sesuai design awal (hard delete), tapi berbeda dari ekspektasi dokumentasi |
 | **`register` route error** | Route `/auth/register` ada di `api.php` tapi controller tidak punya method `register()`. Memanggil endpoint ini akan error. | Tidak mengganggu — register via UserController (admin-only) |
-| **`min_stock` tidak berfungsi** | Field `min_stock` ada di database dan form ProductForm, tapi tidak pernah dicek di backend. Hanya display. | Tidak ada low stock alert threshold (hanya out-of-stock alert) |
+| **`min_stock` tidak ada di DB** | Field `min_stock` tidak ada di migration/model, hanya di form ProductForm (nilai dikirim tapi diabaikan backend). | Low stock badge di Sidebar selalu 0 |
 | **Sidebar low stock badge** | `AppLayout` fetch `/products?low_stock=1` di frontend yang tidak didukung backend filter → selalu 0. | Badge merah tidak pernah muncul |
 | **Products seeder vespa_compatibility** | Seeder menyimpan string bukan JSON array. Cast ke `array` menghasilkan array dengan 1 elemen (string). | Bisa menyebabkan issue display di frontend jika kode mengharapkan multi-element array |
 | **Transactions tanpa pagination** | Halaman Transactions fetch ALL data dan filter client-side. Dataset besar (1000+) bisa lambat. | Scale issue for future growth |
