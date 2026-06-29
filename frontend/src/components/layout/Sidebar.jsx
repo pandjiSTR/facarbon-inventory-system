@@ -9,7 +9,7 @@ import { prefetchRoute } from '../../api/prefetch'
 import {
   LayoutDashboard, Package, ArrowDownToLine, ArrowUpFromLine,
   DollarSign, FileText, History, BarChart3, Upload, LogOut,
-  AlertTriangle, Sun, Moon, Users,
+  Sun, Moon, Users,
 } from 'lucide-react'
 
 const navItems = [
@@ -25,7 +25,7 @@ const navItems = [
   { to: '/users',        label: 'Pengguna',     icon: Users },
 ]
 
-export default function Sidebar({ lowStockCount = 0 }) {
+export default function Sidebar() {
   const { user, logout } = useAuth()
   const { theme, toggle, isDark } = useTheme()
   const navigate = useNavigate()
@@ -102,33 +102,10 @@ export default function Sidebar({ lowStockCount = 0 }) {
             >
               <Icon size={15} strokeWidth={1.8} style={{ flexShrink: 0 }} />
               <span style={{ flex: 1 }}>{label}</span>
-              {to === '/products' && lowStockCount > 0 && (
-                <span style={{
-                  background: 'var(--red)', color: '#fff',
-                  fontSize: 10, fontWeight: 600, padding: '1px 6px',
-                  borderRadius: 99, fontFamily: 'JetBrains Mono, monospace',
-                }}>
-                  {lowStockCount}
-                </span>
-              )}
             </div>
           )
         })}
       </nav>
-
-      {/* Low stock warning */}
-      {lowStockCount > 0 && (
-        <div style={{
-          margin: '0 12px 8px', padding: '8px 10px',
-          background: 'var(--red-bg)', border: '1px solid rgba(224,90,90,0.2)',
-          borderRadius: 8, display: 'flex', alignItems: 'center', gap: 7,
-        }}>
-          <AlertTriangle size={13} color="var(--red)" />
-          <span style={{ fontSize: 11, color: 'var(--red)', fontFamily: 'Inter, sans-serif' }}>
-            {lowStockCount} produk stok tipis
-          </span>
-        </div>
-      )}
 
       {/* Theme toggle */}
       <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border)' }}>
