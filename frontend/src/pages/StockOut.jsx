@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Trash2, TrendingDown, Download } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import api from '../api/axios'
 import { TableSkeleton } from '../components/ui/LoadingSkeleton'
 import Pagination from '../components/ui/Pagination'
@@ -55,10 +56,6 @@ function ChannelBadge({ channel }) {
 }
 
 export default function StockOut() {
-  const [products, setProducts] = useState([])
-  const [records, setRecords] = useState([])
-  const [meta, setMeta] = useState({ total_quantity: 0, total_revenue: 0 })
-  const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(null)
   const [errors, setErrors] = useState({})
@@ -76,26 +73,30 @@ export default function StockOut() {
     notes: '',
   })
 
-  const fetchRecords = (pg) => {
-    api.get('/stock-out', { params: { page: pg ?? page } })
-      .then(res => {
-        setRecords(res.data.data || [])
-        setMeta(res.data.meta || {})
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }
+  // Fetch products list
+  const { data: productsData } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const res = await api.get('/products')
+      return res.data.data || []
+    },
+  })
+  const products = productsData || []
+
+  // Fetch stock-out records with pagination
+  const { data: recordsData, isLoading: loading, refetch } = useQuery({
+    queryKey: ['stock-out', page],
+    queryFn: async () => {
+      const res = await api.get('/stock-out', { params: { page } })
+      return res.data
+    },
+  })
+  const records = recordsData?.data || []
+  const meta = recordsData?.meta || { total_quantity: 0, total_revenue: 0 }
 
   const handlePageChange = (p) => {
     setPage(p)
-    setLoading(true)
-    fetchRecords(p)
   }
-
-  useEffect(() => {
-    api.get('/products').then(res => setProducts(res.data.data || [])).catch(() => {})
-    fetchRecords()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-fill sell_price berdasarkan channel yang dipilih
   const updateSellPrice = (productId, channel) => {
@@ -148,7 +149,7 @@ export default function StockOut() {
       const msg = res.data.message || 'Stok keluar berhasil dicatat'
       setSuccess(msg)
       setForm({ product_id: '', quantity: '', channel: 'reseller', sell_price: '', date: today(), notes: '' })
-      fetchRecords()
+      refetch()
     } catch (err) {
       setServerError(err.response?.data?.message || 'Gagal mencatat stok keluar')
     } finally {
@@ -160,7 +161,7 @@ export default function StockOut() {
     setDeleting(id)
     try {
       await api.delete(`/stock-out/${id}`)
-      fetchRecords()
+      refetch()
     } catch {
       alert('Gagal menghapus')
     } finally {

@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { ArrowDownToLine, ArrowUpFromLine, Wallet, Filter } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import api from '../api/axios'
 import { TableSkeleton } from '../components/ui/LoadingSkeleton'
 
@@ -16,26 +17,33 @@ const TYPE_CONFIG = {
 }
 
 export default function Transactions() {
-  const [stockIns, setStockIns] = useState([])
-  const [stockOuts, setStockOuts] = useState([])
-  const [finances, setFinances] = useState([])
-  const [loading, setLoading] = useState(true)
   const [filterType, setFilterType] = useState('semua')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
 
-  useEffect(() => {
-    // NOTE: Fetches up to 5000 records. For scale beyond 5000, implement server-side aggregation.
-    Promise.all([
-      api.get('/stock-in?per_page=5000').catch(() => ({ data: { data: [] } })),
-      api.get('/stock-out?per_page=5000').catch(() => ({ data: { data: [] } })),
-      api.get('/finances?per_page=5000').catch(() => ({ data: { data: [] } })),
-    ]).then(([si, so, fi]) => {
-      setStockIns(si.data.data || [])
-      setStockOuts(so.data.data || [])
-      setFinances(fi.data.data || [])
-    }).finally(() => setLoading(false))
-  }, [])
+  // Fetch up to 5000 records from all three sources
+  const { data: stockIns, isLoading: loadingStockIn } = useQuery({
+    queryKey: ['stock-in', 5000],
+    queryFn: async () => {
+      const res = await api.get('/stock-in?per_page=5000')
+      return res.data.data || []
+    },
+  })
+  const { data: stockOuts, isLoading: loadingStockOut } = useQuery({
+    queryKey: ['stock-out', 5000],
+    queryFn: async () => {
+      const res = await api.get('/stock-out?per_page=5000')
+      return res.data.data || []
+    },
+  })
+  const { data: finances, isLoading: loadingFinance } = useQuery({
+    queryKey: ['finances', 5000],
+    queryFn: async () => {
+      const res = await api.get('/finances?per_page=5000')
+      return res.data.data || []
+    },
+  })
+  const loading = loadingStockIn || loadingStockOut || loadingFinance
 
   // Gabungkan semua jadi satu list transaksi terstandarisasi
   const combined = useMemo(() => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend
@@ -62,16 +62,14 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 // ── Main Dashboard ────────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const [data, setData] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-
-  useEffect(() => {
-    api.get('/dashboard')
-      .then(res => setData(res.data.data))
-      .catch(() => setError('Gagal memuat data dashboard'))
-      .finally(() => setLoading(false))
-  }, [])
+  const { data, isLoading: loading, error } = useQuery({
+    queryKey: ['dashboard'],
+    queryFn: async () => {
+      const res = await api.get('/dashboard')
+      return res.data.data
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes (dashboard cached on backend for 5 min)
+  })
 
   if (loading) return (
     <div style={{ maxWidth: 1100 }}>
@@ -88,7 +86,7 @@ export default function Dashboard() {
 
   if (error) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-      <div style={{ color: 'var(--red)', fontFamily: 'Inter, sans-serif', fontSize: 13 }}>{error}</div>
+      <div style={{ color: 'var(--red)', fontFamily: 'Inter, sans-serif', fontSize: 13 }}>Gagal memuat data dashboard</div>
     </div>
   )
 

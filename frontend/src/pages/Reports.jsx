@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import {
   BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend
 } from 'recharts'
 import { Calendar, TrendingUp, TrendingDown, Package } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import api from '../api/axios'
 import { TableSkeleton } from '../components/ui/LoadingSkeleton'
 
@@ -40,25 +41,33 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 export default function Reports() {
-  const [products, setProducts] = useState([])
-  const [stockIns, setStockIns] = useState([])
-  const [stockOuts, setStockOuts] = useState([])
-  const [loading, setLoading] = useState(true)
   const [dateFrom, setDateFrom] = useState(monthAgo())
   const [dateTo, setDateTo] = useState(today())
 
-  useEffect(() => {
-    // NOTE: Fetches up to 5000 records. For scale beyond 5000, implement server-side aggregation.
-    Promise.all([
-      api.get('/products?per_page=5000').catch(() => ({ data: { data: [] } })),
-      api.get('/stock-in?per_page=5000').catch(() => ({ data: { data: [] } })),
-      api.get('/stock-out?per_page=5000').catch(() => ({ data: { data: [] } })),
-    ]).then(([p, si, so]) => {
-      setProducts(p.data.data || [])
-      setStockIns(si.data.data || [])
-      setStockOuts(so.data.data || [])
-    }).finally(() => setLoading(false))
-  }, [])
+  // Fetch up to 5000 records from all three sources
+  const { data: productsData, isLoading: loadingProducts } = useQuery({
+    queryKey: ['products', 5000],
+    queryFn: async () => {
+      const res = await api.get('/products?per_page=5000')
+      return res.data.data || []
+    },
+  })
+  const { data: stockIns, isLoading: loadingStockIn } = useQuery({
+    queryKey: ['stock-in', 5000],
+    queryFn: async () => {
+      const res = await api.get('/stock-in?per_page=5000')
+      return res.data.data || []
+    },
+  })
+  const { data: stockOuts, isLoading: loadingStockOut } = useQuery({
+    queryKey: ['stock-out', 5000],
+    queryFn: async () => {
+      const res = await api.get('/stock-out?per_page=5000')
+      return res.data.data || []
+    },
+  })
+  const products = useMemo(() => productsData || [], [productsData])
+  const loading = loadingProducts || loadingStockIn || loadingStockOut
 
   // Filter stock movements by date range
   const filteredIns = useMemo(() =>

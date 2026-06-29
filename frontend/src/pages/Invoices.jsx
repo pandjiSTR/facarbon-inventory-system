@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import { Plus, Trash2, Printer, X, FileText } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import api from '../api/axios'
 import { TableSkeleton } from '../components/ui/LoadingSkeleton'
 import Pagination from '../components/ui/Pagination'
@@ -148,10 +149,6 @@ function InvoiceDocument({ invoice }) {
 }
 
 export default function Invoices() {
-  const [products, setProducts] = useState([])
-  const [invoices, setInvoices] = useState([])
-  const [meta, setMeta] = useState({ total: 0, total_amount: 0 })
-  const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(null)
   const [showForm, setShowForm] = useState(false)
@@ -172,26 +169,30 @@ export default function Invoices() {
   const handlePrint = useReactToPrint({ contentRef: printRef })
   const [confirmDelete, setConfirmDelete] = useState({ isOpen: false, id: null })
 
-  const fetchInvoices = (pg) => {
-    api.get('/invoices', { params: { page: pg ?? page } })
-      .then(res => {
-        setInvoices(res.data.data || [])
-        setMeta(res.data.meta || {})
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }
+  // Fetch products list
+  const { data: productsData } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const res = await api.get('/products')
+      return res.data.data || []
+    },
+  })
+  const products = productsData || []
+
+  // Fetch invoices with pagination
+  const { data: invoicesData, isLoading: loading, refetch } = useQuery({
+    queryKey: ['invoices', page],
+    queryFn: async () => {
+      const res = await api.get('/invoices', { params: { page } })
+      return res.data
+    },
+  })
+  const invoices = invoicesData?.data || []
+  const meta = invoicesData?.meta || { total: 0, total_amount: 0 }
 
   const handlePageChange = (p) => {
     setPage(p)
-    setLoading(true)
-    fetchInvoices(p)
   }
-
-  useEffect(() => {
-    api.get('/products').then(res => setProducts(res.data.data || [])).catch(() => {})
-    fetchInvoices()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const addItem = () => setItems(prev => [...prev, { product_id: '', quantity: 1, unit_price: '', channel: 'reseller' }])
   const removeItem = (idx) => setItems(prev => prev.filter((_, i) => i !== idx))
@@ -249,7 +250,7 @@ export default function Invoices() {
       })
       setShowForm(false)
       resetForm()
-      fetchInvoices()
+      refetch()
       // Tampilkan preview invoice yang baru dibuat
       setPreviewInvoice(res.data.data)
     } catch (err) {
@@ -263,7 +264,7 @@ export default function Invoices() {
     setDeleting(id)
     try {
       await api.delete(`/invoices/${id}`)
-      fetchInvoices()
+      refetch()
     } catch {
       alert('Gagal menghapus invoice')
     } finally {

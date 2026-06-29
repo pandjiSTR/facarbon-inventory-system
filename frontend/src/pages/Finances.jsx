@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Plus, TrendingUp, TrendingDown, Wallet, Download } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import api from '../api/axios'
 import { TableSkeleton } from '../components/ui/LoadingSkeleton'
 import Pagination from '../components/ui/Pagination'
@@ -49,9 +50,6 @@ function Field({ label, children }) {
 }
 
 export default function Finances() {
-  const [records, setRecords] = useState([])
-  const [meta, setMeta] = useState({ total_kredit: 0, total_debit: 0, saldo: 0 })
-  const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [errors, setErrors] = useState({})
@@ -70,20 +68,19 @@ export default function Finances() {
     notes: '',
   })
 
-  const fetchRecords = (type, cat, pg) => {
-    const params = { page: pg ?? page }
-    if (type) params.type = type
-    if (cat) params.category = cat
-    api.get('/finances', { params })
-      .then(res => {
-        setRecords(res.data.data || [])
-        setMeta(res.data.meta || {})
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(() => { fetchRecords() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // Fetch finances with pagination and filters
+  const { data: recordsData, isLoading: loading, refetch } = useQuery({
+    queryKey: ['finances', page, filterType, filterCat],
+    queryFn: async () => {
+      const params = { page }
+      if (filterType) params.type = filterType
+      if (filterCat) params.category = filterCat
+      const res = await api.get('/finances', { params })
+      return res.data
+    },
+  })
+  const records = recordsData?.data || []
+  const meta = recordsData?.meta || { total_kredit: 0, total_debit: 0, saldo: 0 }
 
   const set = (key, val) => {
     setForm(f => ({ ...f, [key]: val }))
@@ -112,7 +109,7 @@ export default function Finances() {
       setSuccess('Catatan keuangan berhasil ditambahkan')
       setForm({ date: today(), description: '', category: 'operasional', type: 'debit', amount: '', notes: '' })
       setShowForm(false)
-      fetchRecords()
+      refetch()
     } catch (err) {
       setServerError(err.response?.data?.message || 'Gagal menyimpan catatan')
     } finally {
@@ -124,14 +121,10 @@ export default function Finances() {
     setFilterType(type)
     setFilterCat(cat)
     setPage(1)
-    setLoading(true)
-    fetchRecords(type ?? '', cat ?? '', 1)
   }
 
   const handlePageChange = (p) => {
     setPage(p)
-    setLoading(true)
-    fetchRecords(filterType, filterCat, p)
   }
 
   return (

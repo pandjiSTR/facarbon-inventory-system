@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Plus, Trash2, PackageCheck, Download } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import api from '../api/axios'
 import { TableSkeleton } from '../components/ui/LoadingSkeleton'
 import Pagination from '../components/ui/Pagination'
@@ -40,10 +41,6 @@ function Field({ label, children }) {
 }
 
 export default function StockIn() {
-  const [products, setProducts] = useState([])
-  const [records, setRecords] = useState([])
-  const [meta, setMeta] = useState({ total_quantity: 0, total_modal: 0 })
-  const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(null)
   const [errors, setErrors] = useState({})
@@ -61,26 +58,30 @@ export default function StockIn() {
     notes: '',
   })
 
-  const fetchRecords = (pg) => {
-    api.get('/stock-in', { params: { page: pg ?? page } })
-      .then(res => {
-        setRecords(res.data.data || [])
-        setMeta(res.data.meta || {})
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }
+  // Fetch products list
+  const { data: productsData } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const res = await api.get('/products')
+      return res.data.data || []
+    },
+  })
+  const products = productsData || []
+
+  // Fetch stock-in records with pagination
+  const { data: recordsData, isLoading: loading, refetch } = useQuery({
+    queryKey: ['stock-in', page],
+    queryFn: async () => {
+      const res = await api.get('/stock-in', { params: { page } })
+      return res.data
+    },
+  })
+  const records = recordsData?.data || []
+  const meta = recordsData?.meta || { total_quantity: 0, total_modal: 0 }
 
   const handlePageChange = (p) => {
     setPage(p)
-    setLoading(true)
-    fetchRecords(p)
   }
-
-  useEffect(() => {
-    api.get('/products').then(res => setProducts(res.data.data || [])).catch(() => {})
-    fetchRecords()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-fill modal_price saat pilih produk
   const handleProductChange = (id) => {
@@ -120,7 +121,7 @@ export default function StockIn() {
       })
       setSuccess('Stok masuk berhasil dicatat')
       setForm({ product_id: '', quantity: '', modal_price: '', category: 'pembelian_stok', date: today(), notes: '' })
-      fetchRecords()
+      refetch()
     } catch (err) {
       setServerError(err.response?.data?.message || 'Gagal mencatat stok masuk')
     } finally {
@@ -132,7 +133,7 @@ export default function StockIn() {
     setDeleting(id)
     try {
       await api.delete(`/stock-in/${id}`)
-      fetchRecords()
+      refetch()
     } catch {
       alert('Gagal menghapus')
     } finally {

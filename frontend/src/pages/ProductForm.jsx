@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Save, Upload, Trash2, ImageOff } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import api from '../api/axios'
 
 const CARBON_TYPES = ['twill', 'forged']
@@ -53,7 +54,6 @@ export default function ProductForm() {
   })
   const [customVespa, setCustomVespa] = useState('')
   const [loading, setLoading] = useState(false)
-  const [fetchLoading, setFetchLoading] = useState(isEdit)
   const [errors, setErrors] = useState({})
   const [serverError, setServerError] = useState('')
   const [photo, setPhoto] = useState(null)
@@ -61,32 +61,35 @@ export default function ProductForm() {
   const [removePhoto, setRemovePhoto] = useState(false)
   const fileInputRef = useRef(null)
 
-  useEffect(() => {
-    if (!isEdit) return
-    api.get(`/products/${id}`)
-      .then(res => {
-        const p = res.data.data || res.data
-        setForm({
-          name: p.name || '',
-          sku: p.sku || '',
-          carbon_type: p.carbon_type || 'twill',
-          vespa_compatibility: Array.isArray(p.vespa_compatibility) ? p.vespa_compatibility : [p.vespa_compatibility],
-          modal_price: p.modal_price ?? '',
-          reseller_price: p.reseller_price ?? '',
-          online_price: p.online_price ?? '',
-        })
-        if (p.photo_url) setPreviewUrl(p.photo_url)
+  // Fetch existing product data for editing
+  const { isLoading: fetchLoading } = useQuery({
+    queryKey: ['product', id],
+    queryFn: async () => {
+      const res = await api.get(`/products/${id}`)
+      const p = res.data.data || res.data
+      setForm({
+        name: p.name || '',
+        sku: p.sku || '',
+        carbon_type: p.carbon_type || 'twill',
+        vespa_compatibility: Array.isArray(p.vespa_compatibility) ? p.vespa_compatibility : [p.vespa_compatibility],
+        modal_price: p.modal_price ?? '',
+        reseller_price: p.reseller_price ?? '',
+        online_price: p.online_price ?? '',
       })
-      .catch(() => setServerError('Gagal memuat data produk'))
-      .finally(() => setFetchLoading(false))
+      if (p.photo_url) setPreviewUrl(p.photo_url)
+      return p
+    },
+    enabled: isEdit,
+  })
 
-    // Cleanup object URLs on unmount
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
     return () => {
       if (previewUrl && previewUrl.startsWith('blob:')) {
         URL.revokeObjectURL(previewUrl)
       }
     }
-  }, [id, isEdit]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const set = (key, val) => {
     setForm(f => ({ ...f, [key]: val }))
