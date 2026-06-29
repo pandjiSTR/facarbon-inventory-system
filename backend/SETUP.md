@@ -6,7 +6,7 @@
 
 ---
 
-## Langkah Setup (Backend Laravel 11)
+## Langkah Setup (Backend Laravel 13)
 
 ### 1. Clone / Copy project ke folder Laragon
 ```bash
@@ -63,19 +63,30 @@ php artisan serve
 | POST | /api/auth/login | Login, dapat token Sanctum |
 | POST | /api/auth/logout | Logout (hapus token) |
 | GET | /api/auth/me | Info user yang login |
-| GET | /api/dashboard | Ringkasan stok & keuangan |
+| GET | /api/dashboard | Ringkasan stok & keuangan (cached 5 menit) |
 | GET/POST | /api/products | List & tambah produk |
-| GET/PATCH/DELETE | /api/products/{id} | Detail, edit, hapus produk |
+| GET/PUT/DELETE | /api/products/{id} | Detail, edit, hapus produk |
 | PATCH | /api/products/{id}/toggle-active | Aktif/nonaktifkan produk |
 | GET | /api/products/{id}/stock-history | Riwayat stok produk |
+| GET | /api/products/export | Export CSV produk |
 | GET/POST | /api/stock-in | List & catat stok masuk |
 | GET/DELETE | /api/stock-in/{id} | Detail & hapus stok masuk |
+| GET | /api/stock-in/export | Export CSV stok masuk |
 | GET/POST | /api/stock-out | List & catat stok keluar |
 | GET/DELETE | /api/stock-out/{id} | Detail & hapus stok keluar |
+| GET | /api/stock-out/export | Export CSV stok keluar |
 | GET/POST | /api/finances | List & tambah catatan keuangan |
 | GET | /api/finances/summary | Ringkasan pemasukan/pengeluaran |
+| GET | /api/finances/export | Export CSV keuangan |
 | GET/POST | /api/invoices | List & buat invoice |
 | GET/DELETE | /api/invoices/{id} | Detail & hapus invoice |
+| GET/POST/DELETE | /api/users | CRUD pengguna |
+| POST | /api/import/finance/preview | Preview import keuangan |
+| POST | /api/import/finance/confirm | Konfirmasi import keuangan |
+| POST | /api/import/stock-in/preview | Preview import stok masuk |
+| POST | /api/import/stock-in/confirm | Konfirmasi import stok masuk |
+| POST | /api/import/stock-out/preview | Preview import stok keluar |
+| POST | /api/import/stock-out/confirm | Konfirmasi import stok keluar |
 
 ---
 

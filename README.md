@@ -44,10 +44,12 @@ FIS dikembangkan untuk menjawab masalah-masalah tersebut dengan pendekatan siste
 ## 🛠️ Tech Stack
 
 **Frontend**
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)
-![Tailwind](https://img.shields.io/badge/TailwindCSS-3-38B2AC?logo=tailwind-css&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-Build-646CFF?logo=vite&logoColor=white)
-![Recharts](https://img.shields.io/badge/Recharts-Charts-8884d8)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![React Router](https://img.shields.io/badge/React_Router-7-CA4245?logo=reactrouter&logoColor=white)
+![Tailwind](https://img.shields.io/badge/TailwindCSS-4-38B2AC?logo=tailwind-css&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white)
+![Recharts](https://img.shields.io/badge/Recharts-3-8884d8)
+![Lucide](https://img.shields.io/badge/Icons-Lucide-F56565)
 
 **Backend**
 ![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)
@@ -105,14 +107,40 @@ Sistem menggunakan tema **dark mode** dengan aksen *gold carbon* yang merepresen
 facarbon-inventory-system/
 ├── backend/              # Laravel 13 REST API
 │   ├── app/
+│   │   ├── Http/Controllers/Api/    # 9 controllers
+│   │   ├── Middleware/               # SecurityHeaders
+│   │   ├── Models/                   # 7 Eloquent models
+│   │   ├── Imports/                  # Maatwebsite Excel importers
+│   │   └── Providers/
+│   ├── config/
 │   ├── database/
-│   └── routes/
-├── frontend/             # React + Vite + Tailwind
+│   │   ├── migrations/              # 14 migrations
+│   │   ├── factories/
+│   │   └── seeders/
+│   ├── routes/
+│   │   └── api.php                  # 43 endpoints
+│   ├── tests/Feature/Api/           # 42 PHPUnit tests
+│   └── composer.json
+├── frontend/             # React 19 + Vite 8 + TailwindCSS 4
 │   ├── src/
-│   └── public/
+│   │   ├── pages/                   # 12 pages (React.lazy)
+│   │   ├── components/
+│   │   ├── context/                 # Auth, Theme, Toast
+│   │   ├── api/
+│   │   └── utils/
+│   ├── e2e/                         # Playwright smoke test
+│   ├── vercel.json
+│   └── package.json
 ├── docs/
 │   ├── screenshots/
-│   └── SRS_FIS_Facarbon.docx
+│   └── SRS_FIS_Facarbon_v1.1.docx
+├── Dockerfile                        # Multi-stage (PHP 8.3 + node 22 + nginx)
+├── docker-compose.yml                # mysql + backend + frontend
+├── nginx.conf                        # SPA fallback + API proxy
+├── render.yaml                       # Render deploy config
+├── AGENTS.md
+├── context.md
+├── resource.md
 ├── .gitignore
 └── README.md
 ```
@@ -154,7 +182,15 @@ npm run dev
 # App tersedia di http://localhost:5173
 ```
 
-### 4. Akun Default (Seeder)
+### 4. Alternatif: Docker
+```bash
+docker-compose up -d
+# Backend: http://localhost:8000
+# Frontend: http://localhost
+# MySQL: port 3306
+```
+
+### 5. Akun Default (Seeder)
 | Role | Email | Password |
 |---|---|---|
 | Admin | admin@facarbon.com | facarbon123 |
@@ -167,8 +203,9 @@ npm run dev
 | Layanan | Platform | Keterangan |
 |---|---|---|
 | Frontend | [Vercel](https://vercel.com) | Auto-deploy dari branch `main` |
-| Backend API | [Render](https://render.com) | Laravel REST API |
-| Database | [Render](https://render.com) | MySQL 8 |
+| Backend API | [Render](https://render.com) | Laravel REST API (PHP 8.3) |
+| Database | [Render](https://render.com) | MySQL 8.0 |
+| Docker | — | Opsional: `docker-compose up` (mysql + backend + frontend)
 
 ---
 
@@ -188,43 +225,97 @@ Dokumentasi lengkap (SRS) tersedia di [`docs/SRS_FIS_Facarbon.docx`](docs/SRS_FI
 
 ---
 
-## 🔌 API Endpoints (32 Endpoint)
+## 🔌 API Endpoints (43 Endpoint, 42 Functional)
 
-Semua endpoint protected membutuhkan header `Authorization: Bearer {token}`
+Semua endpoint (kecuali login) membutuhkan header `Authorization: Bearer {token}`.
+Pagination: semua list endpoint menerima `?per_page=` (default 25, max 100).
 
+### Auth (2 public + 2 protected)
 | Method | Endpoint | Fungsi |
 |---|---|---|
-| POST | `/api/auth/login` | Login |
-| POST | `/api/auth/logout` | Logout |
+| POST | `/api/auth/login` | Login → return Sanctum token |
+| POST | `/api/auth/register` | (route ada, controller tidak diimplementasi) |
+| POST | `/api/auth/logout` | Logout (hapus token) |
 | GET | `/api/auth/me` | Info user login |
-| GET | `/api/dashboard` | Data dashboard |
-| GET/POST | `/api/products` | List & tambah produk |
-| GET/PUT/DELETE | `/api/products/{id}` | Detail, edit, hapus |
-| PATCH | `/api/products/{id}/toggle-active` | Aktif/nonaktif produk |
-| GET | `/api/products/{id}/stock-history` | Riwayat stok produk |
-| GET/POST | `/api/stock-in` | List & catat stok masuk |
-| GET/DELETE | `/api/stock-in/{id}` | Detail & hapus stok masuk |
-| GET/POST | `/api/stock-out` | List & catat stok keluar |
-| GET/DELETE | `/api/stock-out/{id}` | Detail & hapus stok keluar |
-| GET/POST | `/api/finances` | List & entry manual keuangan |
-| GET | `/api/finances/summary` | Summary keuangan |
-| GET | `/api/finances/{id}` | Detail catatan keuangan |
-| GET/POST | `/api/invoices` | List & buat invoice |
-| GET/DELETE | `/api/invoices/{id}` | Detail & hapus invoice |
-| POST | `/api/import/finance/preview` | Preview import keuangan |
-| POST | `/api/import/finance/confirm` | Konfirmasi import keuangan |
+
+### Dashboard (cached 5 menit)
+| Method | Endpoint | Fungsi |
+|---|---|---|
+| GET | `/api/dashboard` | Stat cards, chart 6 bulan, alert stok, penjualan terbaru |
+
+### Products (8)
+| Method | Endpoint | Fungsi |
+|---|---|---|
+| GET | `/api/products` | List (paginate, filter: search/carbon_type/out_of_stock/is_active) |
+| POST | `/api/products` | Tambah produk (upload foto, validasi dimensi) |
+| GET | `/api/products/{id}` | Detail + 5 riwayat stok terakhir |
+| PUT | `/api/products/{id}` | Edit produk |
+| DELETE | `/api/products/{id}` | Soft-delete (hanya jika stok = 0) |
+| PATCH | `/api/products/{id}/toggle-active` | Aktif/nonaktifkan produk |
+| GET | `/api/products/{id}/stock-history` | Semua riwayat stok produk |
+| GET | `/api/products/export` | Export CSV seluruh produk |
+
+### Stock In (5 — no update)
+| Method | Endpoint | Fungsi |
+|---|---|---|
+| GET | `/api/stock-in` | List (paginate, filter: product_id/category/date) |
+| POST | `/api/stock-in` | Catat + update stok + auto finance debit |
+| GET | `/api/stock-in/{id}` | Detail |
+| DELETE | `/api/stock-in/{id}` | Hard-delete + hapus finance + recalculate stok |
+| GET | `/api/stock-in/export` | Export CSV |
+
+### Stock Out (5 — no update)
+| Method | Endpoint | Fungsi |
+|---|---|---|
+| GET | `/api/stock-out` | List (paginate, filter: product_id/channel/date) |
+| POST | `/api/stock-out` | Cek stok → catat + update stok + auto finance kredit |
+| GET | `/api/stock-out/{id}` | Detail |
+| DELETE | `/api/stock-out/{id}` | Hard-delete + hapus finance + recalculate stok |
+| GET | `/api/stock-out/export` | Export CSV |
+
+### Finances (5)
+| Method | Endpoint | Fungsi |
+|---|---|---|
+| GET | `/api/finances` | List (paginate, filter: type/category/date) + meta total |
+| POST | `/api/finances` | Entry manual (operasional, lain-lain) |
+| GET | `/api/finances/{id}` | Detail |
+| GET | `/api/finances/summary` | Summary per tahun/bulan per category+type |
+| GET | `/api/finances/export` | Export CSV |
+
+### Invoices (4 — no update)
+| Method | Endpoint | Fungsi |
+|---|---|---|
+| GET | `/api/invoices` | List (paginate, filter: status/buyer_name/date) |
+| POST | `/api/invoices` | Buat invoice + items + stock_out + finance (1 transaction) |
+| GET | `/api/invoices/{id}` | Detail + items + user + stockOuts |
+| DELETE | `/api/invoices/{id}` | Hapus cascade: items + stockOut + finance + recalculate |
+
+### Users (5)
+| Method | Endpoint | Fungsi |
+|---|---|---|
+| GET | `/api/users` | List semua user |
+| POST | `/api/users` | Buat user baru |
+| GET | `/api/users/{id}` | Detail user |
+| PUT | `/api/users/{id}` | Update user |
+| DELETE | `/api/users/{id}` | Hapus user (tidak bisa hapus diri sendiri) |
+
+### Import Excel (6 — 2-step: preview → confirm)
+| Method | Endpoint | Fungsi |
+|---|---|---|
+| POST | `/api/import/finance/preview` | Preview import Excel keuangan |
+| POST | `/api/import/finance/confirm` | Bulk insert finance |
 | POST | `/api/import/stock-in/preview` | Preview import stok masuk |
-| POST | `/api/import/stock-in/confirm` | Konfirmasi import stok masuk |
+| POST | `/api/import/stock-in/confirm` | Bulk insert + update stok + finance debit |
 | POST | `/api/import/stock-out/preview` | Preview import stok keluar |
-| POST | `/api/import/stock-out/confirm` | Konfirmasi import stok keluar |
+| POST | `/api/import/stock-out/confirm` | Per-record transaction (skip jika stok kurang) |
 
 ---
 
 ## 🗺️ Roadmap
 
 - [x] Penyusunan SRS
-- [x] Backend API (Laravel + Sanctum) — 32 endpoint
-- [x] Frontend (React + Tailwind) — 10 halaman
+- [x] Backend API (Laravel + Sanctum) — 43 endpoint (42 functional)
+- [x] Frontend (React + Tailwind) — 12 halaman
 - [x] Fitur import Excel (keuangan, stok masuk, stok keluar)
 - [x] Cetak faktur ke PDF
 - [x] Deployment online (Vercel + Render)

@@ -983,7 +983,7 @@ Semua halaman di-load dengan `React.lazy()` untuk code splitting, menghasilkan c
 ```jsx
 const Products = lazy(() => import('./pages/Products'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
-// ... 11 pages total
+// ... 12 pages total
 ```
 
 ### 10.2 Page List
@@ -1784,7 +1784,7 @@ Diurutkan dari yang terbaru:
 
 | Optimasi | Detail | Impact |
 |---|---|---|
-| **Code Splitting** | Semua 11 page routes via `React.lazy()` | Main bundle: 842KB → 241KB |
+| **Code Splitting** | Semua 12 page routes via `React.lazy()` | Main bundle: 842KB → 241KB |
 | **Chunk per Page** | Setiap halaman chunk sendiri (2KB–33KB) | Load on demand |
 | **Recharts as Lazy Chunk** | BarChart component 349KB (terberat karena Recharts) | Tidak blocking initial load |
 | **CSS Variables** | Single CSS file, no runtime CSS-in-JS | Minimal CSS footprint |
