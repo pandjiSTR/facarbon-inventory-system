@@ -102,10 +102,9 @@ Accept: application/json
 
 ---
 
-## Default User (dari Seeder)
+## Default Users (dari Seeder)
 
-```
-Email    : admin@facarbon.com
-Password : facarbon123
-Role     : admin
-```
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | admin@facarbon.com | facarbon123 |
+| Staff | staff@facarbon.com | facarbon123 |

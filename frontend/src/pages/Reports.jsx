@@ -48,10 +48,11 @@ export default function Reports() {
   const [dateTo, setDateTo] = useState(today())
 
   useEffect(() => {
+    // NOTE: Fetches up to 5000 records. For scale beyond 5000, implement server-side aggregation.
     Promise.all([
-      api.get('/products').catch(() => ({ data: { data: [] } })),
-      api.get('/stock-in').catch(() => ({ data: { data: [] } })),
-      api.get('/stock-out').catch(() => ({ data: { data: [] } })),
+      api.get('/products?per_page=5000').catch(() => ({ data: { data: [] } })),
+      api.get('/stock-in?per_page=5000').catch(() => ({ data: { data: [] } })),
+      api.get('/stock-out?per_page=5000').catch(() => ({ data: { data: [] } })),
     ]).then(([p, si, so]) => {
       setProducts(p.data.data || [])
       setStockIns(si.data.data || [])

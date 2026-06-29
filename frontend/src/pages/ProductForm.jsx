@@ -50,7 +50,6 @@ export default function ProductForm() {
     name: '', sku: '', carbon_type: 'twill',
     vespa_compatibility: [],
     modal_price: '', reseller_price: '', online_price: '',
-    min_stock: 2,
   })
   const [customVespa, setCustomVespa] = useState('')
   const [loading, setLoading] = useState(false)
@@ -75,7 +74,6 @@ export default function ProductForm() {
           modal_price: p.modal_price ?? '',
           reseller_price: p.reseller_price ?? '',
           online_price: p.online_price ?? '',
-          min_stock: p.min_stock ?? 2,
         })
         if (p.photo_url) setPreviewUrl(p.photo_url)
       })
@@ -515,20 +513,7 @@ export default function ProductForm() {
           </div>
         </div>
 
-        {/* Stok minimum */}
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 20 }}>
-          <Field label="Stok Minimum" hint="Peringatan stok tipis jika stok ≤ nilai ini">
-            <input
-              type="number"
-              value={form.min_stock}
-              onChange={e => set('min_stock', e.target.value)}
-              min={0}
-              style={{ ...monoInputStyle, maxWidth: 120 }}
-              onFocus={e => e.target.style.borderColor = 'var(--accent)'}
-              onBlur={e => e.target.style.borderColor = 'var(--border)'}
-            />
-          </Field>
-        </div>
+
 
         {/* Actions */}
         <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', borderTop: '1px solid var(--border)', paddingTop: 20 }}>

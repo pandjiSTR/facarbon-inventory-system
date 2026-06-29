@@ -118,7 +118,7 @@ facarbon-inventory-system/
 │   │   ├── factories/
 │   │   └── seeders/
 │   ├── routes/
-│   │   └── api.php                  # 43 endpoints
+│   │   └── api.php                  # 42 endpoints
 │   ├── tests/Feature/Api/           # 42 PHPUnit tests
 │   └── composer.json
 ├── frontend/             # React 19 + Vite 8 + TailwindCSS 4
@@ -225,16 +225,15 @@ Dokumentasi lengkap (SRS) tersedia di [`docs/SRS_FIS_Facarbon.docx`](docs/SRS_FI
 
 ---
 
-## 🔌 API Endpoints (43 Endpoint, 42 Functional)
+## 🔌 API Endpoints (42 Functional)
 
 Semua endpoint (kecuali login) membutuhkan header `Authorization: Bearer {token}`.
 Pagination: semua list endpoint menerima `?per_page=` (default 25, max 100).
 
-### Auth (2 public + 2 protected)
+### Auth (1 public + 2 protected)
 | Method | Endpoint | Fungsi |
 |---|---|---|
 | POST | `/api/auth/login` | Login → return Sanctum token |
-| POST | `/api/auth/register` | (route ada, controller tidak diimplementasi) |
 | POST | `/api/auth/logout` | Logout (hapus token) |
 | GET | `/api/auth/me` | Info user login |
 
@@ -314,7 +313,7 @@ Pagination: semua list endpoint menerima `?per_page=` (default 25, max 100).
 ## 🗺️ Roadmap
 
 - [x] Penyusunan SRS
-- [x] Backend API (Laravel + Sanctum) — 43 endpoint (42 functional)
+- [x] Backend API (Laravel + Sanctum) — 42 functional endpoint
 - [x] Frontend (React + Tailwind) — 12 halaman
 - [x] Fitur import Excel (keuangan, stok masuk, stok keluar)
 - [x] Cetak faktur ke PDF

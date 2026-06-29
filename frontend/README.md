@@ -1,16 +1,29 @@
-# React + Vite
+# Facarbon Inventory System — Frontend (React 19 + Vite 8)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+SPA frontend untuk FIS, dibangun dengan React 19 + Vite 8 + TailwindCSS 4.
 
-Currently, two official plugins are available:
+## Tech
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **React 19** — UI library dengan code splitting (12 lazy-loaded pages)
+- **React Router 7** — Client-side routing
+- **Vite 8** — Build tool & dev server
+- **TailwindCSS 4** — Utility-first CSS via Vite plugin
+- **Recharts 3** — Charting (BarChart, LineChart, PieChart)
+- **Lucide React** — SVG icons
+- **Axios** — HTTP client dengan Bearer token interceptor
 
-## React Compiler
+## Commands
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm install
+npm run dev        # http://localhost:5173
+npm run build      # production build → dist/
+npm run lint       # ESLint
+npm run preview    # preview production build
+```
 
-## Expanding the ESLint configuration
+## Pages
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+12 halaman: Login, Dashboard, Products, ProductForm, StockIn, StockOut, Finances, Invoices, Transactions, Reports, Import, Users. Semua `React.lazy()` — main bundle 241KB.
+
+> Proyek ini bagian dari monorepo FIS. Lihat `../README.md` untuk dokumentasi lengkap.

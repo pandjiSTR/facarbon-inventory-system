@@ -8,13 +8,12 @@ export default function AppLayout() {
   const [lowStockCount, setLowStockCount] = useState(0)
 
   useEffect(() => {
-    // Fetch low stock count for badge
-    api.get('/products?low_stock=1')
+    // Fetch low stock count from dashboard endpoint
+    api.get('/dashboard')
       .then(res => {
-        const data = res.data?.data || res.data || []
-        const count = Array.isArray(data)
-          ? data.filter(p => p.stock <= p.min_stock).length
-          : 0
+        const data = res.data?.data || res.data
+        const alerts = data?.alerts?.out_of_stock_products
+        const count = Array.isArray(alerts) ? alerts.length : 0
         setLowStockCount(count)
       })
       .catch(() => {})

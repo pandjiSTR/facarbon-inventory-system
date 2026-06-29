@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight, LayoutGrid, List, Download } from 'lucide-react'
 import api from '../api/axios'
 import ProductCard from '../components/ui/ProductCard'
@@ -22,9 +23,6 @@ const CARBON_LABELS = { twill: 'Twill', forged: 'Forged' }
 
 export default function Products() {
   const navigate = useNavigate()
-  const [products, setProducts] = useState([])
-  const [meta, setMeta] = useState({})
-  const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('semua')
   const [filterStock, setFilterStock] = useState('semua')
@@ -44,45 +42,44 @@ export default function Products() {
     return params
   }, [])
 
-  useEffect(() => {
-    const params = buildParams(page, search, filterType, filterStock)
-    api.get('/products', { params })
-      .then(res => {
-        setProducts(res.data.data || [])
-        setMeta(res.data.meta || {})
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [page, search, filterType, filterStock, buildParams])
+  // React Query for data fetching with caching
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['products', page, search, filterType, filterStock],
+    queryFn: async () => {
+      const params = buildParams(page, search, filterType, filterStock)
+      const res = await api.get('/products', { params })
+      return res.data
+    },
+    staleTime: 1000 * 60 * 2, // Data fresh for 2 minutes
+  })
+
+  const products = data?.data || []
+  const meta = data?.meta || {}
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value)
     setPage(1)
-    setLoading(true)
   }
 
   const handleTypeChange = (t) => {
     setFilterType(t)
     setPage(1)
-    setLoading(true)
   }
 
   const handleStockChange = (s) => {
     setFilterStock(s)
     setPage(1)
-    setLoading(true)
   }
 
   const handlePageChange = (p) => {
     setPage(p)
-    setLoading(true)
   }
 
   const handleDelete = async (id) => {
     setDeleting(id)
     try {
       await api.delete(`/products/${id}`)
-      setProducts(prev => prev.filter(p => p.id !== id))
+      // React Query will automatically refetch and update cache
     } catch {
       alert('Gagal menghapus produk')
     } finally {
@@ -94,9 +91,8 @@ export default function Products() {
   const handleToggle = async (id) => {
     setToggling(id)
     try {
-      const res = await api.patch(`/products/${id}/toggle-active`)
-      const updated = res.data.data
-      setProducts(prev => prev.map(p => p.id === id ? { ...p, is_active: updated.is_active } : p))
+      await api.patch(`/products/${id}/toggle-active`)
+      // React Query will automatically refetch and update cache
     } catch {
       alert('Gagal mengubah status produk')
     } finally {

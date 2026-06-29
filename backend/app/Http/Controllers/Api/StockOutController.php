@@ -35,12 +35,27 @@ class StockOutController extends Controller
         $perPage = min((int) $request->get('per_page', 25), 100);
         $stockOuts = $query->orderByDesc('date')->orderByDesc('id')->paginate($perPage);
 
+        // Calculate grand totals (all records matching filters, not just current page)
+        $totalQuantity = StockOut::query()
+            ->when($request->filled('product_id'), fn($q) => $q->where('product_id', $request->product_id))
+            ->when($request->filled('channel'), fn($q) => $q->where('channel', $request->channel))
+            ->when($request->filled('date_from'), fn($q) => $q->whereDate('date', '>=', $request->date_from))
+            ->when($request->filled('date_to'), fn($q) => $q->whereDate('date', '<=', $request->date_to))
+            ->sum('quantity');
+
+        $totalRevenue = StockOut::query()
+            ->when($request->filled('product_id'), fn($q) => $q->where('product_id', $request->product_id))
+            ->when($request->filled('channel'), fn($q) => $q->where('channel', $request->channel))
+            ->when($request->filled('date_from'), fn($q) => $q->whereDate('date', '>=', $request->date_from))
+            ->when($request->filled('date_to'), fn($q) => $q->whereDate('date', '<=', $request->date_to))
+            ->sum(DB::raw('quantity * sell_price'));
+
         return response()->json([
             'success' => true,
             'data'    => $stockOuts->items(),
             'meta'    => [
-                'total_quantity' => collect($stockOuts->items())->sum('quantity'),
-                'total_revenue'  => collect($stockOuts->items())->sum(fn($s) => $s->quantity * $s->sell_price),
+                'total_quantity' => $totalQuantity,
+                'total_revenue'  => $totalRevenue,
                 'per_page'       => $stockOuts->perPage(),
                 'current_page'   => $stockOuts->currentPage(),
                 'last_page'      => $stockOuts->lastPage(),

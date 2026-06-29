@@ -35,12 +35,27 @@ class StockInController extends Controller
         $perPage = min((int) $request->get('per_page', 25), 100);
         $stockIns = $query->orderByDesc('date')->orderByDesc('id')->paginate($perPage);
 
+        // Calculate grand totals (all records matching filters, not just current page)
+        $totalQuantity = StockIn::query()
+            ->when($request->filled('product_id'), fn($q) => $q->where('product_id', $request->product_id))
+            ->when($request->filled('category'), fn($q) => $q->where('category', $request->category))
+            ->when($request->filled('date_from'), fn($q) => $q->whereDate('date', '>=', $request->date_from))
+            ->when($request->filled('date_to'), fn($q) => $q->whereDate('date', '<=', $request->date_to))
+            ->sum('quantity');
+
+        $totalModal = StockIn::query()
+            ->when($request->filled('product_id'), fn($q) => $q->where('product_id', $request->product_id))
+            ->when($request->filled('category'), fn($q) => $q->where('category', $request->category))
+            ->when($request->filled('date_from'), fn($q) => $q->whereDate('date', '>=', $request->date_from))
+            ->when($request->filled('date_to'), fn($q) => $q->whereDate('date', '<=', $request->date_to))
+            ->sum(DB::raw('quantity * modal_price'));
+
         return response()->json([
             'success' => true,
             'data'    => $stockIns->items(),
             'meta'    => [
-                'total_quantity' => collect($stockIns->items())->sum('quantity'),
-                'total_modal'    => collect($stockIns->items())->sum(fn($s) => $s->quantity * $s->modal_price),
+                'total_quantity' => $totalQuantity,
+                'total_modal'    => $totalModal,
                 'per_page'       => $stockIns->perPage(),
                 'current_page'   => $stockIns->currentPage(),
                 'last_page'      => $stockIns->lastPage(),

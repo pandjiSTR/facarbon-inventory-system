@@ -5,7 +5,7 @@
 > mencakup arsitektur, implementasi, database, API, frontend, deployment, dan seluruh
 > keputusan teknis yang dibuat selama pengembangan.
 >
-> **Versi:** 1.0 — 27 Juni 2026
+> **Versi:** 1.1 — 29 Juni 2026
 > **Repo:** https://github.com/pandjiSTR/facarbon-inventory-system
 > **Live URL:** https://facarbon-inventory-system.vercel.app
 > **API URL:** https://facarbon-backend.onrender.com
@@ -273,7 +273,7 @@ facarbon-inventory-system/
 │   │       ├── UserSeeder.php               ← 2 user: admin + staff
 │   │       └── ProductSeeder.php            ← 24 produk FAC-001 s/d FAC-024
 │   ├── routes/
-│   │   └── api.php                          ← 43 endpoint
+│   │   └── api.php                          ← 42 endpoint
 │   ├── tests/
 │   │   └── Feature/Api/
 │   │       ├── AuthTest.php                 ← 6 tests
@@ -684,7 +684,7 @@ Base URL: `http://127.0.0.1:8000/api` (local) / `https://facarbon-backend.onrend
 
 | Kategori | Jumlah | Auth |
 |---|---|---|
-| Auth (public) | 2 | ❌ Tidak |
+| Auth (public) | 1 | ❌ Tidak |
 | Auth (protected) | 2 | ✅ Sanctum |
 | Dashboard | 1 | ✅ Sanctum |
 | Products | 8 | ✅ Sanctum |
@@ -694,7 +694,7 @@ Base URL: `http://127.0.0.1:8000/api` (local) / `https://facarbon-backend.onrend
 | Invoices | 4 | ✅ Sanctum |
 | Users | 5 | ✅ Sanctum |
 | Import Excel | 6 | ✅ Sanctum |
-| **Total** | **42*** | *register route tidak punya method controller — 43 route terdaftar, 42 functional |
+| **Total** | **42** | Semua functional |
 
 ### 7.2 Response Shape
 
@@ -718,16 +718,13 @@ Semua endpoint mengembalikan response dengan format konsisten:
 
 ### 7.3 Endpoint Detail
 
-#### Auth (2 public + 2 protected)
+#### Auth (1 public + 2 protected)
 
 | Method | Endpoint | Auth | Deskripsi |
 |---|---|---|---|
 | POST | `/auth/login` | ❌ | Login dengan email+password → return user + Sanctum token |
-| POST | `/auth/register` | ❌ | Register user baru (route ada, controller TIDAK implementasi — 404) |
 | POST | `/auth/logout` | ✅ | Hapus token Sanctum yang sedang digunakan |
 | GET | `/auth/me` | ✅ | Informasi user yang sedang login |
-
-**Catatan:** `register` tidak diimplementasikan karena registrasi hanya via UserController (admin-only).
 
 #### Dashboard (1 — cached 5 menit)
 
@@ -1737,6 +1734,8 @@ Diurutkan dari yang terbaru:
 
 | Hash | Tanggal | Tipe | Pesan |
 |---|---|---|---|
+| `[NEW]` | 29 Jun | fix | Meta totals bug: StockIn/Out/Finance now show grand totals not page-level |
+| `[NEW]` | 29 Jun | chore | Increase Transactions/Reports per_page limit to 5000 |
 | `075c340` | 27 Jun | fix | Group Tambah Produk + Export CSV buttons |
 | `05a8b48` | 27 Jun | remove | CI/CD workflows (auto-deploy via Vercel/Render) |
 | `fe076da` | 27 Jun | fix | Relax composer validate (remove --strict) |
@@ -1995,21 +1994,13 @@ VITE_API_URL=http://127.0.0.1:8000/api
 
 ## 20. Known Issues & Limitations
 
-### 20.1 Current Issues (27 Juni 2026)
+### 20.1 Current Issues (29 Juni 2026)
 
 | Issue | Detail | Impact |
-|---|---|---|
-| **SoftDelete mismatch** | StockIn/StockOut/Finance tidak punya `deleted_at` di production → SoftDeletes di-remove. Data terhapus permanen (no audit trail). | Sesuai design awal (hard delete), tapi berbeda dari ekspektasi dokumentasi |
-| **`register` route error** | Route `/auth/register` ada di `api.php` tapi controller tidak punya method `register()`. Memanggil endpoint ini akan error. | Tidak mengganggu — register via UserController (admin-only) |
-| **`min_stock` tidak ada di DB** | Field `min_stock` tidak ada di migration/model, hanya di form ProductForm (nilai dikirim tapi diabaikan backend). | Low stock badge di Sidebar selalu 0 |
-| **Sidebar low stock badge** | `AppLayout` fetch `/products?low_stock=1` (filter backend tdk didukung) + filter `p.stock <= p.min_stock` (field `stock` tdk ada, harusnya `current_stock`). | Badge merah tidak pernah muncul |
-| **Low stock 3 definisi konflik** | Dashboard: `current_stock > 0 && <= 3`. Context.md: `current_stock = 0`. Frontend: `stock <= min_stock`. | Tidak ada definisi yang konsisten |
-| **Route count mismatch** | resource.md & context.md bilang 42 endpoint. api.php punya 43 route (register ada route tapi tdk ada method). | Dokumentasi kurang presisi |
-| **Placeholder.jsx orphan** | `frontend/src/pages/Placeholder.jsx` ada di disk tapi tidak di-import/diroute di manapun. | File sampah — tidak mengganggu |
-| **Products seeder vespa_compatibility** | Seeder menyimpan string bukan JSON array. Cast ke `array` menghasilkan array dengan 1 elemen (string). | Bisa menyebabkan issue display di frontend jika kode mengharapkan multi-element array |
-| **Transactions tanpa pagination** | Halaman Transactions fetch ALL data dan filter client-side. Dataset besar (1000+) bisa lambat. | Scale issue for future growth |
-| **Reports tanpa pagination** | Sama seperti Transactions — fetch all, compute client-side. | Scale issue |
-| **`total_quantity` dan `total_modal` di meta** | Hanya untuk record di halaman saat ini (page-level), bukan semua record. | Bisa menyesatkan jika user kira itu total seluruh data |
+|---|---|---|---|
+| **SoftDelete mismatch** | StockIn/StockOut/Finance tidak punya `deleted_at` di production → SoftDeletes di-remove + migration dihapus. Data terhapus permanen (no audit trail). | Sesuai design awal (hard delete), tidak ada dampak fungsional |
+| **Transactions scale limit** | Halaman Transactions fetch hingga 5000 records (`per_page=5000`). Dataset lebih besar memerlukan server-side aggregation endpoint. | Scale limit at 5000+ records |
+| **Reports scale limit** | Sama seperti Transactions — fetch hingga 5000 records, compute client-side. | Scale limit at 5000+ records |
 | **CORS di local** | `supports_credentials: false` — cookie-based SPA auth tidak didukung. Hanya token auth. | Sesuai design, bukan bug |
 | **Node 18+ requirement** | Frontend butuh Node 18+. Laragon default mungkin Node 16. | Harus upgrade Node via Laragon |
 

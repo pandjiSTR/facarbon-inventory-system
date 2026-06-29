@@ -1,11 +1,24 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { ToastProvider } from './context/ToastContext'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import AppLayout from './components/layout/AppLayout'
 import ErrorBoundary from './components/ui/ErrorBoundary'
+
+// React Query client with optimized caching
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,        // Data stays fresh for 5 minutes
+      gcTime: 1000 * 60 * 10,           // Cache retained for 10 minutes (was cacheTime)
+      refetchOnWindowFocus: false,      // Don't refetch on window focus
+      retry: 1,                         // Retry failed requests once
+    },
+  },
+})
 
 const Login = lazy(() => import('./pages/Login'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -34,12 +47,13 @@ function PageLoading() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
-          <ToastProvider>
-          <ErrorBoundary>
-          <Suspense fallback={<PageLoading />}>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <ThemeProvider>
+          <AuthProvider>
+            <ToastProvider>
+            <ErrorBoundary>
+            <Suspense fallback={<PageLoading />}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
@@ -59,12 +73,13 @@ function App() {
             </Route>
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
-          </Suspense>
-          </ErrorBoundary>
-          </ToastProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </BrowserRouter>
+            </Suspense>
+            </ErrorBoundary>
+            </ToastProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
   )
 }
 

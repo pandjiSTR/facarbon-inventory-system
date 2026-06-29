@@ -33,13 +33,19 @@ class FinanceController extends Controller
         $perPage = min((int) $request->get('per_page', 25), 100);
         $finances = $query->orderByDesc('date')->orderByDesc('id')->paginate($perPage);
 
-        $items = $finances->items();
-        $totalKredit = collect($items)->where('type', 'kredit')->sum('amount');
-        $totalDebit  = collect($items)->where('type', 'debit')->sum('amount');
+        // Calculate grand totals (all records matching filters, not just current page)
+        $baseQuery = Finance::query()
+            ->when($request->filled('type'), fn($q) => $q->where('type', $request->type))
+            ->when($request->filled('category'), fn($q) => $q->where('category', $request->category))
+            ->when($request->filled('date_from'), fn($q) => $q->whereDate('date', '>=', $request->date_from))
+            ->when($request->filled('date_to'), fn($q) => $q->whereDate('date', '<=', $request->date_to));
+
+        $totalKredit = (clone $baseQuery)->where('type', 'kredit')->sum('amount');
+        $totalDebit  = (clone $baseQuery)->where('type', 'debit')->sum('amount');
 
         return response()->json([
             'success' => true,
-            'data'    => $items,
+            'data'    => $finances->items(),
             'meta'    => [
                 'total_kredit' => $totalKredit,
                 'total_debit'  => $totalDebit,

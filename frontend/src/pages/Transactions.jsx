@@ -25,10 +25,11 @@ export default function Transactions() {
   const [dateTo, setDateTo] = useState('')
 
   useEffect(() => {
+    // NOTE: Fetches up to 5000 records. For scale beyond 5000, implement server-side aggregation.
     Promise.all([
-      api.get('/stock-in').catch(() => ({ data: { data: [] } })),
-      api.get('/stock-out').catch(() => ({ data: { data: [] } })),
-      api.get('/finances').catch(() => ({ data: { data: [] } })),
+      api.get('/stock-in?per_page=5000').catch(() => ({ data: { data: [] } })),
+      api.get('/stock-out?per_page=5000').catch(() => ({ data: { data: [] } })),
+      api.get('/finances?per_page=5000').catch(() => ({ data: { data: [] } })),
     ]).then(([si, so, fi]) => {
       setStockIns(si.data.data || [])
       setStockOuts(so.data.data || [])
