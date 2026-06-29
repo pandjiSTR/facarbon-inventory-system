@@ -16,6 +16,9 @@ CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
 # ── Frontend ─────────────────────────────────────────────────────────────────
 FROM node:22-alpine AS frontend
 
+ARG VITE_API_URL=/api
+ENV VITE_API_URL=$VITE_API_URL
+
 WORKDIR /app/frontend
 COPY frontend/ .
 RUN npm ci && npm run build

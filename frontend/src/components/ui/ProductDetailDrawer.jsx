@@ -240,6 +240,7 @@ export default function ProductDetailDrawer({ product, isOpen, onClose, onEdit }
                     <img
                       src={p.photo_url}
                       alt={p.name}
+                      loading="lazy"
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   ) : (

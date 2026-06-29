@@ -1,10 +1,12 @@
+# NOTE: This file is NOT used by docker-compose.yml.
+# The root Dockerfile multi-stage build handles the backend via php artisan serve (dev).
+# Keep this file as reference for production nginx+FPM deployment.
+
 FROM php:8.3-fpm-alpine
 
 # Install system dependencies & PHP extensions
-# 1. Tambahkan libzip-dev di bagian apk add
 RUN apk add --no-cache \
      nginx \
-     supervisor \
      curl \
      libpng-dev \
      libxml2-dev \

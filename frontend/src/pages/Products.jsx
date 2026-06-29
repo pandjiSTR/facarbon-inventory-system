@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useDeferredValue } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight, LayoutGrid, List, Download } from 'lucide-react'
@@ -24,6 +24,7 @@ const CARBON_LABELS = { twill: 'Twill', forged: 'Forged' }
 export default function Products() {
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
+  const deferredSearch = useDeferredValue(search)
   const [filterType, setFilterType] = useState('semua')
   const [filterStock, setFilterStock] = useState('semua')
   const [page, setPage] = useState(1)
@@ -43,10 +44,10 @@ export default function Products() {
   }, [])
 
   // React Query for data fetching with caching
-  const { data, isLoading: loading } = useQuery({
-    queryKey: ['products', page, search, filterType, filterStock],
+  const { data, isLoading: loading, error } = useQuery({
+    queryKey: ['products', page, deferredSearch, filterType, filterStock],
     queryFn: async () => {
-      const params = buildParams(page, search, filterType, filterStock)
+      const params = buildParams(page, deferredSearch, filterType, filterStock)
       const res = await api.get('/products', { params })
       return res.data
     },
@@ -238,7 +239,15 @@ export default function Products() {
         </div>
       </div>
 
-      {viewMode === 'list' ? (
+      {error ? (
+        <div style={{
+          background: 'var(--bg-surface)', border: '1px solid var(--border)',
+          borderRadius: 12, padding: 48, textAlign: 'center', color: 'var(--red)',
+          fontSize: 13, fontFamily: 'Inter, sans-serif',
+        }}>
+          Gagal memuat data produk
+        </div>
+      ) : viewMode === 'list' ? (
         <div style={{
           background: 'var(--bg-surface)', border: '1px solid var(--border)',
           borderRadius: 12, overflow: 'hidden',

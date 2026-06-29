@@ -84,7 +84,7 @@ export default function StockOut() {
   const products = productsData || []
 
   // Fetch stock-out records with pagination
-  const { data: recordsData, isLoading: loading, refetch } = useQuery({
+  const { data: recordsData, isLoading: loading, refetch, error } = useQuery({
     queryKey: ['stock-out', page],
     queryFn: async () => {
       const res = await api.get('/stock-out', { params: { page } })
@@ -383,7 +383,11 @@ export default function StockOut() {
               </h2>
             </div>
 
-            {loading ? (
+            {error ? (
+              <div style={{ padding: 40, textAlign: 'center', color: 'var(--red)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
+                Gagal memuat data stok keluar
+              </div>
+            ) : loading ? (
               <TableSkeleton rows={4} columns={6} />
             ) : records.length === 0 ? (
               <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { Edit2, Trash2, ToggleLeft, ToggleRight, AlertCircle } from 'lucide-react'
 import ImageModal from './ImageModal'
 
@@ -57,7 +57,7 @@ function StockBadge({ stock }) {
   )
 }
 
-export default function ProductCard({ product, onEdit, onDelete, onToggle, onShowDetail, toggling, deleting }) {
+const ProductCard = memo(function ProductCard({ product, onEdit, onDelete, onToggle, onShowDetail, toggling, deleting }) {
   const [modalOpen, setModalOpen] = useState(false)
   const p = product
 
@@ -88,6 +88,7 @@ export default function ProductCard({ product, onEdit, onDelete, onToggle, onSho
             <img
               src={p.photo_url}
               alt={p.name}
+              loading="lazy"
               style={{
                 width: '100%', height: '100%',
                 objectFit: 'cover',
@@ -222,4 +223,6 @@ export default function ProductCard({ product, onEdit, onDelete, onToggle, onSho
       )}
     </>
   )
-}
+})
+
+export default ProductCard

@@ -1,9 +1,11 @@
-import { createContext, useState } from 'react'
+import { createContext, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import api from '../api/axios'
 
 export const AuthContext = createContext(null) // eslint-disable-line react-refresh/only-export-components
 
 export function AuthProvider({ children }) {
+  const navigate = useNavigate()
   const [user, setUser] = useState(() => {
     try {
       const saved = localStorage.getItem('auth_user')
@@ -13,6 +15,16 @@ export function AuthProvider({ children }) {
     }
   })
   const [loading, setLoading] = useState(false)
+
+  // Listen for 401 events from axios interceptors — redirect without full page reload
+  useEffect(() => {
+    const handler = () => {
+      setUser(null)
+      navigate('/login', { replace: true })
+    }
+    window.addEventListener('auth:unauthorized', handler)
+    return () => window.removeEventListener('auth:unauthorized', handler)
+  }, [navigate])
 
   const login = async (email, password) => {
     setLoading(true)

@@ -45,29 +45,29 @@ export default function Reports() {
   const [dateTo, setDateTo] = useState(today())
 
   // Fetch up to 5000 records from all three sources
-  const { data: productsData, isLoading: loadingProducts } = useQuery({
+  const { data: products = [], isLoading: loadingProducts, error: errProducts } = useQuery({
     queryKey: ['products', 5000],
     queryFn: async () => {
       const res = await api.get('/products?per_page=5000')
       return res.data.data || []
     },
   })
-  const { data: stockIns, isLoading: loadingStockIn } = useQuery({
+  const { data: stockIns = [], isLoading: loadingStockIn, error: errStockIn } = useQuery({
     queryKey: ['stock-in', 5000],
     queryFn: async () => {
       const res = await api.get('/stock-in?per_page=5000')
       return res.data.data || []
     },
   })
-  const { data: stockOuts, isLoading: loadingStockOut } = useQuery({
+  const { data: stockOuts = [], isLoading: loadingStockOut, error: errStockOut } = useQuery({
     queryKey: ['stock-out', 5000],
     queryFn: async () => {
       const res = await api.get('/stock-out?per_page=5000')
       return res.data.data || []
     },
   })
-  const products = useMemo(() => productsData || [], [productsData])
   const loading = loadingProducts || loadingStockIn || loadingStockOut
+  const error = errProducts || errStockIn || errStockOut
 
   // Filter stock movements by date range
   const filteredIns = useMemo(() =>
@@ -231,7 +231,11 @@ export default function Reports() {
           </p>
         </div>
 
-        {loading ? (
+        {error ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--red)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
+            Gagal memuat data laporan
+          </div>
+        ) : loading ? (
           <TableSkeleton rows={4} columns={6} />
         ) : productReport.length === 0 ? (
           <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>

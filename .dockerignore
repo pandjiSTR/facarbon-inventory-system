@@ -1,0 +1,10 @@
+.git
+.gitignore
+.env
+.env.example
+**/node_modules
+**/vendor
+backend/storage/framework/cache/data/*
+backend/storage/logs/*
+*.md
+docker-compose.yml

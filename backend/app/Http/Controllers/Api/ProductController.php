@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -49,7 +50,7 @@ class ProductController extends Controller
             'data'    => $products->items(),
             'meta'    => [
                 'total'         => $products->total(),
-                'out_of_stock'  => Product::where('current_stock', 0)->count(),
+                'out_of_stock'  => Cache::remember('out_of_stock_count', 60, fn() => Product::where('current_stock', 0)->count()),
                 'per_page'      => $products->perPage(),
                 'current_page'  => $products->currentPage(),
                 'last_page'     => $products->lastPage(),

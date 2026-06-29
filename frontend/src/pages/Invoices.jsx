@@ -180,7 +180,7 @@ export default function Invoices() {
   const products = productsData || []
 
   // Fetch invoices with pagination
-  const { data: invoicesData, isLoading: loading, refetch } = useQuery({
+  const { data: invoicesData, isLoading: loading, refetch, error } = useQuery({
     queryKey: ['invoices', page],
     queryFn: async () => {
       const res = await api.get('/invoices', { params: { page } })
@@ -456,7 +456,11 @@ export default function Invoices() {
 
       {/* Table */}
       <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-        {loading ? (
+        {error ? (
+          <div style={{ padding: 48, textAlign: 'center', color: 'var(--red)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
+            Gagal memuat data faktur
+          </div>
+        ) : loading ? (
           <TableSkeleton rows={4} columns={7} />
         ) : invoices.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>Belum ada faktur dibuat</div>

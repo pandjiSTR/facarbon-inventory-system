@@ -1,8 +1,11 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { useCallback, useTransition } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { useAuth } from '../../context/useAuth'
 import { useTheme } from '../../context/useTheme'
-import logoDark from '../../assets/logo-facarbon-dark.png'
-import logoWhite from '../../assets/logo-facarbon-white.png'
+import logoDark from '../../assets/logo-facarbon-dark.webp'
+import logoWhite from '../../assets/logo-facarbon-white.webp'
+import { prefetchRoute } from '../../api/prefetch'
 import {
   LayoutDashboard, Package, ArrowDownToLine, ArrowUpFromLine,
   DollarSign, FileText, History, BarChart3, Upload, LogOut,
@@ -26,10 +29,28 @@ export default function Sidebar({ lowStockCount = 0 }) {
   const { user, logout } = useAuth()
   const { theme, toggle, isDark } = useTheme()
   const navigate = useNavigate()
+  const location = useLocation()
+  const queryClient = useQueryClient()
+  const [isPending, startTransition] = useTransition()
+
+  const handleNavEnter = useCallback((route) => {
+    prefetchRoute(queryClient, route)
+  }, [queryClient])
+
+  const handleNavClick = useCallback((to) => {
+    startTransition(() => {
+      navigate(to)
+    })
+  }, [navigate])
 
   const handleLogout = async () => {
     await logout()
     navigate('/login')
+  }
+
+  const isActive = (to) => {
+    if (to === '/dashboard') return location.pathname === to
+    return location.pathname.startsWith(to)
   }
 
   return (
@@ -59,35 +80,40 @@ export default function Sidebar({ lowStockCount = 0 }) {
 
       {/* Nav */}
       <nav style={{ flex: 1, overflowY: 'auto', padding: '10px 0' }}>
-        {navItems.map(({ to, label, icon: Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            style={({ isActive }) => ({
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '9px 18px', margin: '1px 0',
-              textDecoration: 'none',
-              color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-              background: isActive ? 'var(--accent-bg)' : 'transparent',
-              borderLeft: isActive ? '2px solid var(--accent)' : '2px solid transparent',
-              fontFamily: 'Inter, sans-serif', fontSize: 13,
-              fontWeight: isActive ? 500 : 400,
-              transition: 'all 0.15s ease',
-            })}
-          >
-            <Icon size={15} strokeWidth={1.8} style={{ flexShrink: 0 }} />
-            <span style={{ flex: 1 }}>{label}</span>
-            {to === '/products' && lowStockCount > 0 && (
-              <span style={{
-                background: 'var(--red)', color: '#fff',
-                fontSize: 10, fontWeight: 600, padding: '1px 6px',
-                borderRadius: 99, fontFamily: 'JetBrains Mono, monospace',
-              }}>
-                {lowStockCount}
-              </span>
-            )}
-          </NavLink>
-        ))}
+        {navItems.map(({ to, label, icon: Icon }) => {
+          const active = isActive(to)
+          return (
+            <div
+              key={to}
+              onClick={() => handleNavClick(to)}
+              onMouseEnter={() => handleNavEnter(to)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '9px 18px', margin: '1px 0', cursor: 'pointer',
+                textDecoration: 'none',
+                color: active ? 'var(--accent)' : 'var(--text-secondary)',
+                background: active ? 'var(--accent-bg)' : 'transparent',
+                borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
+                fontFamily: 'Inter, sans-serif', fontSize: 13,
+                fontWeight: active ? 500 : 400,
+                opacity: isPending && active ? 0.5 : 1,
+                transition: 'all 0.15s ease',
+              }}
+            >
+              <Icon size={15} strokeWidth={1.8} style={{ flexShrink: 0 }} />
+              <span style={{ flex: 1 }}>{label}</span>
+              {to === '/products' && lowStockCount > 0 && (
+                <span style={{
+                  background: 'var(--red)', color: '#fff',
+                  fontSize: 10, fontWeight: 600, padding: '1px 6px',
+                  borderRadius: 99, fontFamily: 'JetBrains Mono, monospace',
+                }}>
+                  {lowStockCount}
+                </span>
+              )}
+            </div>
+          )
+        })}
       </nav>
 
       {/* Low stock warning */}

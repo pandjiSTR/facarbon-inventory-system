@@ -1,11 +1,20 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import Sidebar from './Sidebar'
 import api from '../../api/axios'
+import { prefetchDashboard, prefetchProducts } from '../../api/prefetch'
 
 export default function AppLayout() {
   const location = useLocation()
+  const queryClient = useQueryClient()
   const [lowStockCount, setLowStockCount] = useState(0)
+
+  // Prefetch critical data immediately after login
+  useEffect(() => {
+    prefetchDashboard(queryClient)
+    prefetchProducts(queryClient, 1)
+  }, [queryClient])
 
   useEffect(() => {
     // Fetch low stock count from dashboard endpoint
@@ -31,7 +40,7 @@ export default function AppLayout() {
           overflowX: 'hidden',
         }}
       >
-        <div key={location.pathname} style={{ animation: 'fadeIn 0.25s ease-out' }}>
+        <div key={location.pathname}>
           <Outlet />
         </div>
       </main>

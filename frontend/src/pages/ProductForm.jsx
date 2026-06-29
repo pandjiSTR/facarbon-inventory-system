@@ -383,6 +383,7 @@ export default function ProductForm() {
                   <img
                     src={previewUrl}
                     alt="Preview"
+                    loading="lazy"
                     style={{
                       width: 100, height: 100, borderRadius: 8,
                       objectFit: 'cover', border: '1px solid var(--border)',

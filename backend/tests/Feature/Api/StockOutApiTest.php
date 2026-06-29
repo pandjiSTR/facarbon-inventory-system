@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\StockIn;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class StockOutApiTest extends TestCase
@@ -94,5 +95,55 @@ class StockOutApiTest extends TestCase
         $this->assertEquals(20, $this->product->current_stock);
 
         $this->assertDatabaseMissing('finances', ['stock_out_id' => $stockOutId]);
+    }
+
+    public function test_export_returns_csv(): void
+    {
+        $this->withToken($this->token)->postJson('/api/stock-out', [
+            'product_id' => $this->product->id,
+            'quantity'   => 2,
+            'channel'    => 'langsung',
+            'sell_price' => 150000,
+            'date'       => now()->format('Y-m-d'),
+        ]);
+
+        $response = $this->withToken($this->token)
+            ->get('/api/stock-out/export');
+
+        $response->assertOk()
+            ->assertHeader('Content-Type', 'text/csv; charset=utf-8')
+            ->assertHeader('Content-Disposition', 'attachment; filename="stock-out.csv"');
+    }
+
+    public function test_clears_dashboard_cache_on_create(): void
+    {
+        $key = 'dashboard_' . now()->year . '_' . now()->month;
+        Cache::put($key, 'stale');
+
+        $this->withToken($this->token)
+            ->postJson('/api/stock-out', [
+                'product_id' => $this->product->id,
+                'quantity'   => 1,
+                'channel'    => 'langsung',
+                'sell_price' => 100000,
+                'date'       => now()->format('Y-m-d'),
+            ]);
+
+        $this->assertNull(Cache::get($key));
+    }
+
+    public function test_validation_fails_with_invalid_channel(): void
+    {
+        $response = $this->withToken($this->token)
+            ->postJson('/api/stock-out', [
+                'product_id' => $this->product->id,
+                'quantity'   => 1,
+                'channel'    => 'invalid_channel',
+                'sell_price' => 100000,
+                'date'       => now()->format('Y-m-d'),
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['channel']);
     }
 }

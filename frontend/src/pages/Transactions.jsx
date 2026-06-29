@@ -22,21 +22,21 @@ export default function Transactions() {
   const [dateTo, setDateTo] = useState('')
 
   // Fetch up to 5000 records from all three sources
-  const { data: stockIns, isLoading: loadingStockIn } = useQuery({
+  const { data: stockIns, isLoading: loadingStockIn, error: errStockIn } = useQuery({
     queryKey: ['stock-in', 5000],
     queryFn: async () => {
       const res = await api.get('/stock-in?per_page=5000')
       return res.data.data || []
     },
   })
-  const { data: stockOuts, isLoading: loadingStockOut } = useQuery({
+  const { data: stockOuts, isLoading: loadingStockOut, error: errStockOut } = useQuery({
     queryKey: ['stock-out', 5000],
     queryFn: async () => {
       const res = await api.get('/stock-out?per_page=5000')
       return res.data.data || []
     },
   })
-  const { data: finances, isLoading: loadingFinance } = useQuery({
+  const { data: finances, isLoading: loadingFinance, error: errFinance } = useQuery({
     queryKey: ['finances', 5000],
     queryFn: async () => {
       const res = await api.get('/finances?per_page=5000')
@@ -44,6 +44,7 @@ export default function Transactions() {
     },
   })
   const loading = loadingStockIn || loadingStockOut || loadingFinance
+  const error = errStockIn || errStockOut || errFinance
 
   // Gabungkan semua jadi satu list transaksi terstandarisasi
   const combined = useMemo(() => {
@@ -186,7 +187,11 @@ export default function Transactions() {
 
       {/* Table */}
       <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-        {loading ? (
+        {error ? (
+          <div style={{ padding: 48, textAlign: 'center', color: 'var(--red)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
+            Gagal memuat data transaksi
+          </div>
+        ) : loading ? (
           <TableSkeleton rows={4} columns={5} />
         ) : filtered.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>

@@ -69,7 +69,7 @@ export default function StockIn() {
   const products = productsData || []
 
   // Fetch stock-in records with pagination
-  const { data: recordsData, isLoading: loading, refetch } = useQuery({
+  const { data: recordsData, isLoading: loading, refetch, error } = useQuery({
     queryKey: ['stock-in', page],
     queryFn: async () => {
       const res = await api.get('/stock-in', { params: { page } })
@@ -331,7 +331,11 @@ export default function StockIn() {
               </h2>
             </div>
 
-            {loading ? (
+            {error ? (
+              <div style={{ padding: 40, textAlign: 'center', color: 'var(--red)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
+                Gagal memuat data stok masuk
+              </div>
+            ) : loading ? (
               <TableSkeleton rows={4} columns={6} />
             ) : records.length === 0 ? (
               <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>

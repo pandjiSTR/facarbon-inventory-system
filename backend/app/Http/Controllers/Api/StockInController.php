@@ -86,7 +86,8 @@ class StockInController extends Controller
                 'user_id' => $request->user()->id,
             ]);
 
-            // 2. Update current_stock produk
+            // 2. Eager load product and update current_stock
+            $stockIn->load('product');
             $stockIn->product->recalculateStock();
 
             // 3. Otomatis buat record finances (debit = pengeluaran modal)
@@ -104,6 +105,7 @@ class StockInController extends Controller
             DB::commit();
 
             $this->forgetDashboardCache($validated['date']);
+            $this->forgetFinanceSummaryCache($validated['date']);
 
             return response()->json([
                 'success' => true,
@@ -186,6 +188,7 @@ class StockInController extends Controller
             DB::commit();
 
             $this->forgetDashboardCache($stockIn->date);
+            $this->forgetFinanceSummaryCache($stockIn->date);
 
             return response()->json([
                 'success' => true,

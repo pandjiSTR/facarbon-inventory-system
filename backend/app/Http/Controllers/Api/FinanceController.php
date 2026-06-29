@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Finance;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class FinanceController extends Controller
@@ -88,6 +89,7 @@ class FinanceController extends Controller
         ]);
 
         $this->forgetDashboardCache($validated['date']);
+        $this->forgetFinanceSummaryCache($validated['date']);
 
         return response()->json([
             'success' => true,
@@ -137,37 +139,43 @@ class FinanceController extends Controller
     public function summary(Request $request): JsonResponse
     {
         $year  = $request->get('year', now()->year);
-        $month = $request->get('month'); // opsional
+        $month = $request->get('month');
 
-        $query = Finance::whereYear('date', $year);
-        if ($month) {
-            $query->whereMonth('date', $month);
-        }
+        $cacheKey = $month
+            ? "finance_summary_{$year}_{$month}"
+            : "finance_summary_{$year}";
 
-        $data = $query->selectRaw("
-                category,
-                type,
-                SUM(amount) as total,
-                COUNT(*) as count
-            ")
-            ->groupBy('category', 'type')
-            ->get();
+        $data = Cache::remember($cacheKey, 300, function () use ($year, $month) {
+            $query = Finance::whereYear('date', $year);
+            if ($month) {
+                $query->whereMonth('date', $month);
+            }
 
-        $totalKredit = $query->where('type', 'kredit')->sum('amount');
-        $totalDebit  = Finance::whereYear('date', $year)
-            ->when($month, fn($q) => $q->whereMonth('date', $month))
-            ->where('type', 'debit')->sum('amount');
+            $breakdown = (clone $query)->selectRaw("
+                    category,
+                    type,
+                    SUM(amount) as total,
+                    COUNT(*) as count
+                ")
+                ->groupBy('category', 'type')
+                ->get();
+
+            $totalKredit = (clone $query)->where('type', 'kredit')->sum('amount');
+            $totalDebit  = (clone $query)->where('type', 'debit')->sum('amount');
+
+            return [
+                'year'         => $year,
+                'month'        => $month,
+                'breakdown'    => $breakdown,
+                'total_kredit' => $totalKredit,
+                'total_debit'  => $totalDebit,
+                'saldo'        => $totalKredit - $totalDebit,
+            ];
+        });
 
         return response()->json([
             'success' => true,
-            'data'    => [
-                'year'          => $year,
-                'month'         => $month,
-                'breakdown'     => $data,
-                'total_kredit'  => $totalKredit,
-                'total_debit'   => $totalDebit,
-                'saldo'         => $totalKredit - $totalDebit,
-            ],
+            'data'    => $data,
         ]);
     }
 }

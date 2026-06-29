@@ -1,6 +1,7 @@
+import { memo } from 'react'
 import { AlertCircle } from 'lucide-react'
 
-export default function StockBadge({ stock }) {
+const StockBadge = memo(function StockBadge({ stock }) {
   if (stock === 0) return (
     <span style={{
       fontFamily: 'JetBrains Mono, monospace', fontSize: 12, fontWeight: 600,
@@ -29,4 +30,6 @@ export default function StockBadge({ stock }) {
       {stock}
     </span>
   )
-}
+})
+
+export default StockBadge

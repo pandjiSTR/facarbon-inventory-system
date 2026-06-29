@@ -114,6 +114,7 @@ class StockOutController extends Controller
             DB::commit();
 
             $this->forgetDashboardCache($validated['date']);
+            $this->forgetFinanceSummaryCache($validated['date']);
 
             // Notifikasi stok kosong
             $product->refresh();
@@ -199,6 +200,7 @@ class StockOutController extends Controller
             DB::commit();
 
             $this->forgetDashboardCache($stockOut->date);
+            $this->forgetFinanceSummaryCache($stockOut->date);
 
             return response()->json([
                 'success' => true,

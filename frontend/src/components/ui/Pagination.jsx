@@ -1,6 +1,7 @@
+import { memo } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-export default function Pagination({ meta, onPageChange }) {
+const Pagination = memo(function Pagination({ meta, onPageChange }) {
   if (!meta || meta.last_page <= 1) return null
 
   const { current_page, last_page } = meta
@@ -55,4 +56,6 @@ export default function Pagination({ meta, onPageChange }) {
       {btn(false, current_page === last_page, <ChevronRight size={14} />, () => onPageChange(current_page + 1))}
     </div>
   )
-}
+})
+
+export default Pagination

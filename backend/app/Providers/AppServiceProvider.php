@@ -49,6 +49,9 @@ class AppServiceProvider extends ServiceProvider
 
         foreach ($checks as $key) {
             if (empty(Config::get($key))) {
+                if (App::environment('production')) {
+                    throw new \RuntimeException("Missing required config key: {$key}");
+                }
                 Log::warning("Missing required config key: {$key}");
             }
         }

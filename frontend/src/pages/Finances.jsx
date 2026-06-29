@@ -69,7 +69,7 @@ export default function Finances() {
   })
 
   // Fetch finances with pagination and filters
-  const { data: recordsData, isLoading: loading, refetch } = useQuery({
+  const { data: recordsData, isLoading: loading, refetch, error } = useQuery({
     queryKey: ['finances', page, filterType, filterCat],
     queryFn: async () => {
       const params = { page }
@@ -319,7 +319,11 @@ export default function Finances() {
 
       {/* Table */}
       <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-        {loading ? (
+        {error ? (
+          <div style={{ padding: 48, textAlign: 'center', color: 'var(--red)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>
+            Gagal memuat data keuangan
+          </div>
+        ) : loading ? (
           <TableSkeleton rows={4} columns={6} />
         ) : records.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, fontFamily: 'Inter, sans-serif' }}>Belum ada catatan keuangan</div>

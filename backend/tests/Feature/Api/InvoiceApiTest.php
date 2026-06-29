@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\StockIn;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 
 class InvoiceApiTest extends TestCase
@@ -159,5 +160,110 @@ class InvoiceApiTest extends TestCase
 
         $response->assertOk()
             ->assertJsonCount(1, 'data');
+    }
+
+    public function test_creates_invoice_with_draft_status(): void
+    {
+        $response = $this->withToken($this->token)
+            ->postJson('/api/invoices', [
+                'buyer_name' => 'Draft Buyer',
+                'date'       => now()->format('Y-m-d'),
+                'status'     => 'draft',
+                'items'      => [
+                    [
+                        'product_id' => $this->product1->id,
+                        'quantity'   => 1,
+                        'unit_price' => 100000,
+                        'channel'    => 'langsung',
+                    ],
+                ],
+            ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.status', 'draft');
+    }
+
+    public function test_creates_invoice_with_paid_status(): void
+    {
+        $response = $this->withToken($this->token)
+            ->postJson('/api/invoices', [
+                'buyer_name' => 'Paid Buyer',
+                'date'       => now()->format('Y-m-d'),
+                'status'     => 'paid',
+                'items'      => [
+                    [
+                        'product_id' => $this->product1->id,
+                        'quantity'   => 1,
+                        'unit_price' => 100000,
+                        'channel'    => 'online',
+                    ],
+                ],
+            ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.status', 'paid');
+    }
+
+    public function test_defaults_status_to_confirmed(): void
+    {
+        $response = $this->withToken($this->token)
+            ->postJson('/api/invoices', [
+                'buyer_name' => 'Default Buyer',
+                'date'       => now()->format('Y-m-d'),
+                'items'      => [
+                    [
+                        'product_id' => $this->product1->id,
+                        'quantity'   => 1,
+                        'unit_price' => 100000,
+                        'channel'    => 'langsung',
+                    ],
+                ],
+            ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.status', 'confirmed');
+    }
+
+    public function test_rejects_invalid_status(): void
+    {
+        $response = $this->withToken($this->token)
+            ->postJson('/api/invoices', [
+                'buyer_name' => 'Bad Status',
+                'date'       => now()->format('Y-m-d'),
+                'status'     => 'cancelled',
+                'items'      => [
+                    [
+                        'product_id' => $this->product1->id,
+                        'quantity'   => 1,
+                        'unit_price' => 100000,
+                        'channel'    => 'langsung',
+                    ],
+                ],
+            ]);
+
+        $response->assertStatus(422)
+            ->assertJsonValidationErrors(['status']);
+    }
+
+    public function test_clears_dashboard_cache_on_create(): void
+    {
+        $key = 'dashboard_' . now()->year . '_' . now()->month;
+        Cache::put($key, 'stale');
+
+        $this->withToken($this->token)
+            ->postJson('/api/invoices', [
+                'buyer_name' => 'Cache Test',
+                'date'       => now()->format('Y-m-d'),
+                'items'      => [
+                    [
+                        'product_id' => $this->product1->id,
+                        'quantity'   => 1,
+                        'unit_price' => 50000,
+                        'channel'    => 'langsung',
+                    ],
+                ],
+            ]);
+
+        $this->assertNull(Cache::get($key));
     }
 }

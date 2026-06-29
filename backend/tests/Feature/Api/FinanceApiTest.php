@@ -179,4 +179,36 @@ class FinanceApiTest extends TestCase
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['amount']);
     }
+
+    public function test_export_returns_csv(): void
+    {
+        $this->withToken($this->token)->postJson('/api/finances', [
+            'date'        => now()->format('Y-m-d'),
+            'description' => 'Export test',
+            'category'    => 'operasional',
+            'type'        => 'debit',
+            'amount'      => 100000,
+        ]);
+
+        $response = $this->withToken($this->token)
+            ->get('/api/finances/export');
+
+        $response->assertOk()
+            ->assertHeader('Content-Type', 'text/csv; charset=utf-8')
+            ->assertHeader('Content-Disposition', 'attachment; filename="finances.csv"');
+    }
+
+    public function test_summary_returns_cached_result(): void
+    {
+        Finance::create(['user_id' => $this->user->id, 'date' => now()->format('Y-m-d'), 'description' => 'A', 'category' => 'operasional', 'type' => 'debit', 'amount' => 50000]);
+
+        $this->withToken($this->token)->getJson('/api/finances/summary');
+
+        Finance::create(['user_id' => $this->user->id, 'date' => now()->format('Y-m-d'), 'description' => 'B', 'category' => 'penjualan', 'type' => 'kredit', 'amount' => 100000]);
+
+        $response = $this->withToken($this->token)->getJson('/api/finances/summary');
+
+        $response->assertOk()
+            ->assertJsonPath('success', true);
+    }
 }

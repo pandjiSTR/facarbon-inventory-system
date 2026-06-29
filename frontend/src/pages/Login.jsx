@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 import { useTheme } from '../context/useTheme'
-import logoDark from '../assets/logo-facarbon-dark.png'
-import logoWhite from '../assets/logo-facarbon-white.png'
+import logoDark from '../assets/logo-facarbon-dark.webp'
+import logoWhite from '../assets/logo-facarbon-white.webp'
 
 export default function Login() {
   const { login, loading } = useAuth()

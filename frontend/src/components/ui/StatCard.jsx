@@ -1,4 +1,6 @@
-export default function StatCard({ icon: Icon, label, value, sub, accent, iconBg }) {
+import { memo } from 'react'
+
+const StatCard = memo(function StatCard({ icon: Icon, label, value, sub, accent, iconBg }) {
   return (
     <div className="card-hover" style={{
       background: 'var(--bg-surface)',
@@ -42,4 +44,6 @@ export default function StatCard({ icon: Icon, label, value, sub, accent, iconBg
       </div>
     </div>
   )
-}
+})
+
+export default StatCard

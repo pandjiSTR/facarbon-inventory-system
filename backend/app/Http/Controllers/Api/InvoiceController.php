@@ -139,6 +139,7 @@ class InvoiceController extends Controller
             DB::commit();
 
             $this->forgetDashboardCache($validated['date']);
+            $this->forgetFinanceSummaryCache($validated['date']);
 
             return response()->json([
                 'success' => true,
@@ -173,7 +174,9 @@ class InvoiceController extends Controller
     {
         DB::beginTransaction();
         try {
-            // Hapus finance & stock_out terkait, lalu recalculate stok
+            // Eager load stockOuts + product to prevent N+1
+            $invoice->load('stockOuts.product');
+
             foreach ($invoice->stockOuts as $stockOut) {
                 $product = $stockOut->product;
                 $stockOut->finance()->delete();
@@ -187,6 +190,7 @@ class InvoiceController extends Controller
             DB::commit();
 
             $this->forgetDashboardCache($invoice->date);
+            $this->forgetFinanceSummaryCache($invoice->date);
 
             return response()->json([
                 'success' => true,

@@ -1,6 +1,8 @@
+import { memo } from 'react'
+
 const CARBON_LABELS = { twill: 'Twill', forged: 'Forged' }
 
-export default function Badge({ type }) {
+const Badge = memo(function Badge({ type }) {
   const styles = {
     twill:  { color: '#a0c4ff', bg: 'rgba(160,196,255,0.08)' },
     forged: { color: 'var(--accent)', bg: 'var(--accent-bg)' },
@@ -15,4 +17,6 @@ export default function Badge({ type }) {
       {CARBON_LABELS[type] || type}
     </span>
   )
-}
+})
+
+export default Badge
