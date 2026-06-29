@@ -31,7 +31,7 @@ WORKDIR /var/www
 COPY . .
 
 # Install dependencies
-RUN composer install --no-interaction --optimize-autoloader --no-dev --prefer-source
+RUN composer install --no-interaction --optimize-autoloader --no-dev --no-scripts --prefer-source
 
 # Setup Nginx configuration
 RUN mkdir -p /run/nginx
