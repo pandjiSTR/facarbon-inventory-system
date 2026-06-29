@@ -2012,7 +2012,7 @@ VITE_API_URL=http://127.0.0.1:8000/api
 | **Bulk Delete** | Select + batch delete di StockIn, StockOut, Finances | Medium |
 | **Mobile Responsive Sidebar** | Sidebar fixed 220px — tidak collapsible di mobile | Medium |
 | **PWA / Offline Mode** | Service worker + manifest belum ditambahkan | Low |
-| **React Query / SWR** | Masih pakai `useEffect` pattern — belum caching fetch | Low |
+| **React Query / SWR** | ✅ **Selesai** — `@tanstack/react-query` 5.101.2 sudah diimplementasikan di semua halaman | Done |
 | **Error Tracking (Sentry)** | Belum diintegrasikan | Low |
 | **User Permission (RBAC)** | Semua user sama — belum ada pembedaan akses | Low |
 | **Email Notification** | Notifikasi stok kosong via email | Low |

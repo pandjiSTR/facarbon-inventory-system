@@ -47,7 +47,11 @@ export default function Transactions() {
 
   // Gabungkan semua jadi satu list transaksi terstandarisasi
   const combined = useMemo(() => {
-    const inItems = stockIns.map(r => ({
+    const si = stockIns ?? []
+    const so = stockOuts ?? []
+    const fi = finances ?? []
+
+    const inItems = si.map(r => ({
       id: `stock_in_${r.id}`,
       type: 'stock_in',
       date: r.date,
@@ -58,7 +62,7 @@ export default function Transactions() {
       raw: r,
     }))
 
-    const outItems = stockOuts.map(r => ({
+    const outItems = so.map(r => ({
       id: `stock_out_${r.id}`,
       type: 'stock_out',
       date: r.date,
@@ -72,7 +76,7 @@ export default function Transactions() {
     // Hanya finance yang BUKAN otomatis dari stock_in/stock_out (untuk hindari duplikasi tampilan)
     // Tapi karena finance otomatis sudah terwakili oleh stock_in/stock_out di atas,
     // kita tampilkan finance manual saja (yang stock_in_id & stock_out_id null)
-    const financeItems = finances
+    const financeItems = fi
       .filter(f => !f.stock_in_id && !f.stock_out_id)
       .map(r => ({
         id: `finance_${r.id}`,
