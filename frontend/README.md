@@ -25,5 +25,6 @@ npm run preview    # preview production build
 ## Pages
 
 12 halaman: Login, Dashboard, Products, ProductForm, StockIn, StockOut, Finances, Invoices, Transactions, Reports, Import, Users. Semua `React.lazy()` — main bundle 241KB.
+Error handling via useQuery `error` state + fallback UI di 7 pages. 401 redirect via custom event (no full reload).
 
 > Proyek ini bagian dari monorepo FIS. Lihat `../README.md` untuk dokumentasi lengkap.

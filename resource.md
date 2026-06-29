@@ -185,8 +185,6 @@ Dari sisi akademik, proyek FIS bertujuan untuk:
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
-        "@types/react": "^19.2.14",
-        "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^6.0.1",
         "eslint": "^10.3.0",
         "eslint-plugin-react-hooks": "^7.1.1",
@@ -275,14 +273,21 @@ facarbon-inventory-system/
 │   ├── routes/
 │   │   └── api.php                          ← 42 endpoint
 │   ├── tests/
-│   │   └── Feature/Api/
-│   │       ├── AuthTest.php                 ← 6 tests
-│   │       ├── ProductApiTest.php           ← 6 tests
-│   │       ├── StockInApiTest.php           ← 3 tests
-│   │       ├── StockOutApiTest.php          ← 3 tests
-│   │       ├── FinanceApiTest.php           ← 10 tests
-│   │       ├── InvoiceApiTest.php           ← 4 tests
-│   │       └── ImportApiTest.php            ← 10 tests
+│   │   ├── Feature/Api/
+│   │   │   ├── AuthTest.php                 ← 6 tests
+│   │   │   ├── DashboardApiTest.php         ← 7 tests
+│   │   │   ├── ProductApiTest.php           ← 12 tests
+│   │   │   ├── StockInApiTest.php           ← 6 tests
+│   │   │   ├── StockOutApiTest.php          ← 6 tests
+│   │   │   ├── FinanceApiTest.php           ← 12 tests
+│   │   │   ├── InvoiceApiTest.php           ← 9 tests
+│   │   │   ├── UserApiTest.php              ← 11 tests
+│   │   │   └── ImportApiTest.php            ← 10 tests
+│   │   └── Unit/Models/
+│   │       ├── UserTest.php                 ← 7 tests
+│   │       ├── ProductTest.php              ← 5 tests
+│   │       ├── StockInTest.php              ← 2 tests
+│   │       └── StockOutTest.php             ← 2 tests
 │   ├── .env.example
 │   ├── composer.json
 │   └── render.yaml                         ← (opsional, root punya sendiri)
@@ -1081,14 +1086,14 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Response interceptor — 401 → redirect ke /login
+// Response interceptor — 401 → dispatch custom event (no full reload)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('auth_token')
       localStorage.removeItem('auth_user')
-      window.location.href = '/login'
+      window.dispatchEvent(new CustomEvent('auth:unauthorized'))
     }
     return Promise.reject(error)
   }
@@ -1169,7 +1174,19 @@ protected function forgetDashboardCache(string $date = null): void
 }
 ```
 
-**Controllers that invalidate:**
+**Finance Summary Cache:**
+```php
+// Base Controller
+protected function forgetFinanceSummaryCache(string $date = null): void
+{
+    $d = $date ? now()->parse($date) : now();
+    Cache::forget("finance_summary_{$d->year}");
+    Cache::forget("finance_summary_{$d->year}_{$d->month}");
+    Cache::forget('out_of_stock_count');
+}
+```
+
+**Controllers that invalidate (both Dashboard + Finance summary):**
 | Controller | store | destroy | Other |
 |---|---|---|---|
 | ProductController | ✅ (now) | ✅ (now) | toggleActive (now) |
@@ -1475,15 +1492,23 @@ Semua enum disimpan sebagai string di database (tidak menggunakan PHP 8.1 native
 ### 14.2 Test Files & Coverage
 
 | Test File | Tests | Coverage |
-|---|---|---|
+|---|---|---|---|
 | `AuthTest.php` | 6 | Login valid, invalid, inactive account, logout, me, unauthenticated rejection |
-| `ProductApiTest.php` | 6 | List, create, show, update, delete (stock>0 → fail, stock=0 → ok), toggle active |
-| `StockInApiTest.php` | 3 | Create + stock update + finance auto, list, delete + recalculate |
-| `StockOutApiTest.php` | 3 | Create + stock update + finance auto + out-of-stock notification, reject insufficient stock, delete + recalculate |
-| `FinanceApiTest.php` | 10 | Create debit, create kredit, list, filter by type, filter by category, show, validation errors (5 variants: missing fields, invalid type, invalid category, invalid amount) |
-| `InvoiceApiTest.php` | 4 | Create multi-item + stock-out + finance, delete cascade + stock revert, reject insufficient stock, list |
+| `ProductApiTest.php` | 12 | List, create, show, update, delete (stock>0 → fail, stock=0 → ok), toggle active, stock history, photo upload valid, photo upload invalid dimensions, photo upload invalid mime, export CSV, cache invalidation |
+| `StockInApiTest.php` | 6 | Create + stock update + finance auto, list, delete + recalculate, export CSV, cache invalidation, invalid category |
+| `StockOutApiTest.php` | 6 | Create + stock update + finance auto + out-of-stock notification, reject insufficient stock, delete + recalculate, export CSV, cache invalidation, invalid channel |
+| `FinanceApiTest.php` | 12 | Create debit, create kredit, list, filter by type, filter by category, show, validation errors (5 variants: missing fields, invalid type, invalid category, invalid amount), export CSV, summary cache |
+| `InvoiceApiTest.php` | 9 | Create multi-item + stock-out + finance, delete cascade + stock revert, reject insufficient stock, list, status=draft, status=paid, defaults to confirmed, invalid status rejected, cache invalidation |
+| `DashboardApiTest.php` | 7 | Empty structure, seeded counts, finances, invoices, monthly chart, caching, auth guard |
+| `UserApiTest.php` | 11 | Index, create, show, update, delete (other + self-fail), duplicate email, short password, invalid role, required fields, auth guard |
 | `ImportApiTest.php` | 10 | Finance preview (2: no file, invalid type), stock-in preview (2: no file, invalid type), stock-out preview (2: no file, invalid type), finance confirm, stock-in confirm, stock-out confirm (sufficient stock), stock-out confirm (insufficient stock → skip) |
-| **Total** | **42** | |
+| **Feature Subtotal** | **79** | |
+| `UserTest.php` (Unit) | 7 | isAdmin (admin/staff), password hashing, hasMany stockIns/stockOuts/finances, is_active boolean cast |
+| `ProductTest.php` (Unit) | 5 | Carbon type casting, vespa_compatibility array cast, is_active boolean cast, soft deletes, isOutOfStock |
+| `StockInTest.php` (Unit) | 2 | BelongsTo product + user relationship, belongs to user |
+| `StockOutTest.php` (Unit) | 2 | BelongsTo product relationship, channel mutator |
+| **Unit Subtotal** | **16** | |
+| **Total** | **105** | 313 assertions |
 
 ### 14.3 Key Test Patterns
 

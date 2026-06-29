@@ -1,7 +1,7 @@
 # Facarbon Inventory System — Setup Guide
 
 ## Prerequisites
-- Laragon (PHP 8.2+, MySQL 8, Composer)
+- Laragon (PHP 8.3+, MySQL 8, Composer)
 - Node.js 18+ (untuk React frontend)
 
 ---

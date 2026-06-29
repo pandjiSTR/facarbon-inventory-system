@@ -119,7 +119,7 @@ facarbon-inventory-system/
 │   │   └── seeders/
 │   ├── routes/
 │   │   └── api.php                  # 42 endpoints
-│   ├── tests/Feature/Api/           # 42 PHPUnit tests
+│   ├── tests/Feature/Api/           # 105 PHPUnit tests
 │   └── composer.json
 ├── frontend/             # React 19 + Vite 8 + TailwindCSS 4
 │   ├── src/
